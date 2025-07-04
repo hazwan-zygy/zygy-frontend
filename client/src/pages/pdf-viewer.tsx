@@ -271,6 +271,7 @@ export default function PDFViewerPage() {
                   onFileUpload={handleFileUpload}
                   fileInputRef={fileInputRef}
                   isUploading={uploadMutation.isPending}
+                  searchQuery={searchQuery}
                 />
               </CardContent>
             </Card>

@@ -97,7 +97,7 @@ export function SearchInterface({
     
     searchTimeoutRef.current = setTimeout(() => {
       onSearch(query);
-    }, 300); // 300ms delay
+    }, 600); // 300ms delay
   }, [onSearch]);
 
   const handleSearchInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

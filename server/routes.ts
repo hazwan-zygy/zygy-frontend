@@ -2,28 +2,32 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
-import { insertPdfDocumentSchema, insertSearchResultSchema } from "@shared/schema";
+import { insertPdfDocumentSchema } from "@shared/schema";
 import { z } from "zod";
 import type { Request } from "express";
+import fs from "node:fs";
+import path from "node:path";
+import pdfParse from "pdf-parse";
+// Import the pdfjs library for server-side processing
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
 }
 
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') {
+    if (file.mimetype === "application/pdf") {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF files are allowed'));
+      cb(new Error("Only PDF files are allowed"));
     }
-  }
+  },
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
   // Get all PDF documents
   app.get("/api/documents", async (req, res) => {
     try {
@@ -34,7 +38,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get a specific PDF document
+  // Get a specific PDF document's metadata
   app.get("/api/documents/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -48,46 +52,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload a PDF document
-  app.post("/api/documents/upload", upload.single('pdf'), async (req: MulterRequest, res) => {
-    try {
-      console.log('Upload request received:', {
-        hasFile: !!req.file,
-        contentType: req.get('content-type'),
-        fileDetails: req.file ? {
-          originalname: req.file.originalname,
-          mimetype: req.file.mimetype,
-          size: req.file.size
-        } : null
-      });
-      
-      if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded" });
-      }
+  // Get a specific PDF document's file content
+  app.get("/api/documents/:id/file", async (req, res) => {
+    const id = +req.params.id;
+    const doc = await storage.getPdfDocument(id);
+    if (!doc) return res.status(404).json({ error: "Document not found" });
 
-      const file = req.file;
-      
-      // For now, we'll create a mock document entry
-      // In a real implementation, you would use a PDF parsing library like pdf-parse
-      const documentData = {
-        filename: `${Date.now()}-${file.originalname}`,
-        originalName: file.originalname,
-        fileSize: file.size,
-        totalPages: 1, // This would be determined by PDF parsing
-        textContent: "Sample PDF content for demonstration", // This would be extracted from PDF
-      };
+    const filePath = path.resolve(process.cwd(), "uploads", doc.filename);
+    if (!fs.existsSync(filePath))
+      return res.status(404).json({ error: "File missing on disk" });
 
-      const validatedData = insertPdfDocumentSchema.parse(documentData);
-      const document = await storage.createPdfDocument(validatedData);
-      
-      res.json(document);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid document data", details: error.errors });
-      }
-      res.status(500).json({ error: "Failed to upload document" });
-    }
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${doc.originalName}"`,
+    );
+    fs.createReadStream(filePath).pipe(res);
   });
+
+  // Upload a PDF document
+  app.post(
+    "/api/documents/upload",
+    upload.single("pdf"),
+    async (req: MulterRequest, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({ error: "No file uploaded" });
+        }
+        const file = req.file;
+        const uploadsDir = path.resolve(process.cwd(), "uploads");
+        await fs.promises.mkdir(uploadsDir, { recursive: true });
+        const storedFilename = `${Date.now()}-${file.originalname}`;
+        const filePath = path.join(uploadsDir, storedFilename);
+        await fs.promises.writeFile(filePath, file.buffer);
+        const parsed = await pdfParse(file.buffer);
+        const documentData = {
+          filename: storedFilename,
+          originalName: file.originalname,
+          fileSize: file.size,
+          totalPages: parsed.numpages,
+          textContent: parsed.text,
+        };
+        const validatedData = insertPdfDocumentSchema.parse(documentData);
+        const document = await storage.createPdfDocument(validatedData);
+        res.json(document);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res
+            .status(400)
+            .json({ error: "Invalid document data", details: error.errors });
+        }
+        console.error(error);
+        res.status(500).json({ error: "Failed to upload document" });
+      }
+    },
+  );
 
   // Search text in a PDF document
   app.post("/api/documents/:id/search", async (req, res) => {
@@ -104,26 +123,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Document not found" });
       }
 
-      // Check if we have cached search results
-      const cachedResults = await storage.getSearchResults(documentId, query);
-      if (cachedResults) {
-        return res.json(cachedResults.results);
-      }
+      // Read the stored PDF file into a buffer
+      const filePath = path.resolve(process.cwd(), "uploads", document.filename);
+      const pdfBuffer = await fs.promises.readFile(filePath);
 
-      // Perform search in document text content
-      const searchResults = performTextSearch(document.textContent || "", query, { matchCase, wholeWords });
-      
-      // Cache the search results
-      const searchResultData = {
-        documentId,
-        query,
-        results: searchResults,
-      };
+      // Perform the page-aware search
+      const searchResults = await performTextSearchOnPdfBuffer(pdfBuffer, query, {
+        matchCase,
+        wholeWords,
+      });
 
-      await storage.createSearchResult(searchResultData);
-      
       res.json(searchResults);
     } catch (error) {
+      console.error("Search failed:", error);
       res.status(500).json({ error: "Failed to search document" });
     }
   });
@@ -143,46 +155,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-function performTextSearch(text: string, query: string, options: { matchCase?: boolean; wholeWords?: boolean }) {
+/**
+ * Performs a page-aware search on a PDF buffer.
+ */
+async function performTextSearchOnPdfBuffer(
+  pdfBuffer: Buffer,
+  query: string,
+  options: { matchCase?: boolean; wholeWords?: boolean },
+) {
   const { matchCase = false, wholeWords = false } = options;
-  
-  let searchText = matchCase ? text : text.toLowerCase();
-  let searchQuery = matchCase ? query : query.toLowerCase();
-  
-  const results = [];
-  let startIndex = 0;
-  
-  while (startIndex < searchText.length) {
-    let index = searchText.indexOf(searchQuery, startIndex);
-    
-    if (index === -1) break;
-    
-    // Check for whole word match if required
-    if (wholeWords) {
-      const beforeChar = index > 0 ? searchText[index - 1] : ' ';
-      const afterChar = index + searchQuery.length < searchText.length ? searchText[index + searchQuery.length] : ' ';
-      
-      if (!/\W/.test(beforeChar) || !/\W/.test(afterChar)) {
-        startIndex = index + 1;
-        continue;
+  const results: any[] = [];
+  const searchQuery = matchCase ? query : query.toLowerCase();
+
+  const pdfData = new Uint8Array(pdfBuffer);
+  const pdf = await pdfjs.getDocument(pdfData).promise;
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map((item: any) => item.str).join(" ");
+    const searchText = matchCase ? pageText : pageText.toLowerCase();
+
+    let startIndex = 0;
+    while (startIndex < searchText.length) {
+      let index = searchText.indexOf(searchQuery, startIndex);
+      if (index === -1) break;
+
+      if (wholeWords) {
+        const beforeChar = index > 0 ? searchText[index - 1] : " ";
+        const afterChar =
+          index + searchQuery.length < searchText.length
+            ? searchText[index + searchQuery.length]
+            : " ";
+        if (!/\W/.test(beforeChar) || !/\W/.test(afterChar)) {
+          startIndex = index + 1;
+          continue;
+        }
       }
+
+      const contextStart = Math.max(0, index - 30);
+      const contextEnd = Math.min(
+        pageText.length,
+        index + searchQuery.length + 30,
+      );
+      const context = pageText.substring(contextStart, contextEnd);
+
+      results.push({
+        index,
+        context,
+        pageNumber: i, // <-- The correct page number
+        matchStart: index - contextStart,
+        matchEnd: index - contextStart + searchQuery.length,
+      });
+
+      startIndex = index + searchQuery.length;
     }
-    
-    // Extract context around the match
-    const contextStart = Math.max(0, index - 50);
-    const contextEnd = Math.min(text.length, index + searchQuery.length + 50);
-    const context = text.substring(contextStart, contextEnd);
-    
-    results.push({
-      index,
-      context,
-      pageNumber: 1, // This would be calculated based on PDF page breaks
-      matchStart: index - contextStart,
-      matchEnd: index - contextStart + searchQuery.length,
-    });
-    
-    startIndex = index + 1;
   }
-  
+
   return results;
 }
