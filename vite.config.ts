@@ -29,9 +29,9 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    fs: {
-      strict: true,
-      deny: ["**/.*"],
-    },
+    // fs: {
+    //   strict: true,
+    //   deny: ["**/.*"],
+    // },
   },
 });
