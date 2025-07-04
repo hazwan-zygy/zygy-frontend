@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,12 +86,34 @@ export function SearchInterface({
   isDeleting,
 }: SearchInterfaceProps) {
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Debounced search to prevent excessive API calls
+  const debouncedSearch = useCallback((query: string) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      onSearch(query);
+    }, 300); // 300ms delay
+  }, [onSearch]);
 
   const handleSearchInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setLocalSearchQuery(value);
-    onSearch(value);
-  }, [onSearch]);
+    debouncedSearch(value);
+  }, [debouncedSearch]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSearchOptionChange = useCallback((option: keyof SearchOptions, value: boolean) => {
     const newOptions = { ...searchOptions, [option]: value };
@@ -187,6 +209,7 @@ export function SearchInterface({
             {/* Search Input */}
             <div className="relative">
               <Input
+                ref={inputRef}
                 type="text"
                 placeholder="Search text in PDF..."
                 value={localSearchQuery}
