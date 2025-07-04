@@ -51,6 +51,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload a PDF document
   app.post("/api/documents/upload", upload.single('pdf'), async (req: MulterRequest, res) => {
     try {
+      console.log('Upload request received:', {
+        hasFile: !!req.file,
+        contentType: req.get('content-type'),
+        fileDetails: req.file ? {
+          originalname: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size
+        } : null
+      });
+      
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
       }
