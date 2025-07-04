@@ -1,0 +1,331 @@
+import { useState, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Search, 
+  ChevronUp, 
+  ChevronDown, 
+  X, 
+  Download, 
+  FileText,
+  Trash2,
+  Loader2
+} from "lucide-react";
+
+interface PdfDocument {
+  id: number;
+  filename: string;
+  originalName: string;
+  fileSize: number;
+  totalPages: number;
+  textContent?: string;
+  uploadedAt: string;
+}
+
+interface SearchResult {
+  index: number;
+  context: string;
+  pageNumber: number;
+  matchStart: number;
+  matchEnd: number;
+}
+
+interface SearchOptions {
+  matchCase: boolean;
+  wholeWords: boolean;
+}
+
+interface SearchInterfaceProps {
+  searchQuery: string;
+  searchResults: SearchResult[];
+  currentResultIndex: number;
+  searchOptions: SearchOptions;
+  selectedDocument: PdfDocument | null;
+  documents: PdfDocument[];
+  onSearch: (query: string) => void;
+  onSearchOptionsChange: (options: SearchOptions) => void;
+  onNextResult: () => void;
+  onPrevResult: () => void;
+  onJumpToResult: (index: number) => void;
+  onClearSearch: () => void;
+  onSelectDocument: (document: PdfDocument) => void;
+  onDeleteDocument: (id: number) => void;
+  isSearching: boolean;
+  isDeleting: boolean;
+}
+
+export function SearchInterface({
+  searchQuery,
+  searchResults,
+  currentResultIndex,
+  searchOptions,
+  selectedDocument,
+  documents,
+  onSearch,
+  onSearchOptionsChange,
+  onNextResult,
+  onPrevResult,
+  onJumpToResult,
+  onClearSearch,
+  onSelectDocument,
+  onDeleteDocument,
+  isSearching,
+  isDeleting,
+}: SearchInterfaceProps) {
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  const handleSearchInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalSearchQuery(value);
+    onSearch(value);
+  }, [onSearch]);
+
+  const handleSearchOptionChange = useCallback((option: keyof SearchOptions, value: boolean) => {
+    const newOptions = { ...searchOptions, [option]: value };
+    onSearchOptionsChange(newOptions);
+    if (localSearchQuery) {
+      onSearch(localSearchQuery);
+    }
+  }, [searchOptions, onSearchOptionsChange, localSearchQuery, onSearch]);
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' KB';
+    return Math.round(bytes / (1024 * 1024)) + ' MB';
+  };
+
+  const highlightSearchText = (text: string, query: string) => {
+    if (!query) return text;
+    
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return parts.map((part, index) => 
+      part.toLowerCase() === query.toLowerCase() ? (
+        <span key={index} className="bg-yellow-200 px-1 rounded font-medium">
+          {part}
+        </span>
+      ) : part
+    );
+  };
+
+  return (
+    <Card className="h-full overflow-hidden">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg">Search Document</CardTitle>
+      </CardHeader>
+      
+      <CardContent className="p-4 space-y-4 h-full overflow-auto">
+        {/* Document Selection */}
+        <div className="space-y-2">
+          <Label htmlFor="document-select">Select Document</Label>
+          <Select 
+            value={selectedDocument?.id.toString() || ""} 
+            onValueChange={(value) => {
+              const doc = documents.find(d => d.id === parseInt(value));
+              if (doc) onSelectDocument(doc);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Choose a PDF document" />
+            </SelectTrigger>
+            <SelectContent>
+              {documents.map((doc) => (
+                <SelectItem key={doc.id} value={doc.id.toString()}>
+                  <div className="flex items-center space-x-2">
+                    <FileText size={16} />
+                    <span className="truncate">{doc.originalName}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {selectedDocument && (
+          <>
+            {/* Document Info */}
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <FileText className="text-blue-600" size={16} />
+                  <span className="font-medium text-sm">{selectedDocument.originalName}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDeleteDocument(selectedDocument.id)}
+                  disabled={isDeleting}
+                  className="h-6 w-6 text-red-500 hover:text-red-700"
+                >
+                  {isDeleting ? (
+                    <Loader2 className="animate-spin" size={12} />
+                  ) : (
+                    <Trash2 size={12} />
+                  )}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>{formatFileSize(selectedDocument.fileSize)}</span>
+                <span>{selectedDocument.totalPages} pages</span>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Search Input */}
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Search text in PDF..."
+                value={localSearchQuery}
+                onChange={handleSearchInput}
+                className="pr-10"
+                disabled={isSearching}
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                {isSearching ? (
+                  <Loader2 className="animate-spin text-gray-400" size={16} />
+                ) : (
+                  <Search className="text-gray-400" size={16} />
+                )}
+              </div>
+            </div>
+
+            {/* Search Options */}
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="match-case"
+                  checked={searchOptions.matchCase}
+                  onCheckedChange={(checked) => handleSearchOptionChange('matchCase', checked as boolean)}
+                />
+                <Label htmlFor="match-case" className="text-sm">Match case</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="whole-words"
+                  checked={searchOptions.wholeWords}
+                  onCheckedChange={(checked) => handleSearchOptionChange('wholeWords', checked as boolean)}
+                />
+                <Label htmlFor="whole-words" className="text-sm">Whole words</Label>
+              </div>
+            </div>
+
+            {/* Search Results Summary */}
+            {searchResults.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      {searchResults.length} results
+                    </Badge>
+                    <span className="text-sm text-gray-600">
+                      {currentResultIndex + 1} of {searchResults.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onPrevResult}
+                      disabled={searchResults.length <= 1}
+                      className="h-6 w-6"
+                    >
+                      <ChevronUp size={14} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onNextResult}
+                      disabled={searchResults.length <= 1}
+                      className="h-6 w-6"
+                    >
+                      <ChevronDown size={14} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Search Results List */}
+            {searchResults.length > 0 && (
+              <div className="space-y-2">
+                <ScrollArea className="h-80">
+                  <div className="space-y-2">
+                    {searchResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                          index === currentResultIndex 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                        onClick={() => onJumpToResult(index)}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">
+                            Page {result.pageNumber}
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            Result {index + 1}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {highlightSearchText(result.context, localSearchQuery)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
+            {/* No Results State */}
+            {localSearchQuery && searchResults.length === 0 && !isSearching && (
+              <div className="text-center py-8 text-gray-500">
+                <Search className="mx-auto mb-2" size={32} />
+                <p className="text-sm">No results found for "{localSearchQuery}"</p>
+              </div>
+            )}
+
+            {/* Quick Actions */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">Quick Actions</h3>
+              <div className="space-y-2">
+                <Button
+                  variant="ghost"
+                  onClick={onClearSearch}
+                  className="w-full justify-start text-sm"
+                  disabled={!localSearchQuery}
+                >
+                  <X className="mr-2" size={16} />
+                  Clear search
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sm"
+                  disabled={searchResults.length === 0}
+                >
+                  <Download className="mr-2" size={16} />
+                  Export results
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
