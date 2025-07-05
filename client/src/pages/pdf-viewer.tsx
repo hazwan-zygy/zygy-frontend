@@ -142,8 +142,7 @@ export default function PDFViewerPage() {
     },
   });
 
-  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileUpload = useCallback((file: File) => {
     if (file && file.type === "application/pdf") {
       uploadMutation.mutate(file);
     } else {

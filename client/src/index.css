@@ -101,3 +101,60 @@
 .animate-pulse-highlight {
   animation: pulse-highlight 1.5s ease-in-out;
 }
+
+/* Enhanced highlighting styles */
+.pdf-page .textLayer {
+  /* Ensure text layer is properly positioned */
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  overflow: hidden !important;
+  opacity: 0.2 !important;
+  line-height: 1.0 !important;
+}
+
+.pdf-page .textLayer > span {
+  /* Make text selectable and highlightable */
+  user-select: text !important;
+  pointer-events: auto !important;
+}
+
+/* Better highlight animation */
+@keyframes pulse-highlight {
+  0% { 
+    background-color: #fef08a;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  }
+  50% { 
+    background-color: #facc15;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.2);
+  }
+  100% { 
+    background-color: #fef08a;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  }
+}
+
+.animate-pulse-highlight {
+  animation: pulse-highlight 2s ease-in-out 3 !important;
+}
+
+@keyframes pulse {
+  0% { 
+    background-color: #fef08a;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  }
+  50% { 
+    background-color: #dd8f09;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.2);
+  }
+  100% { 
+    background-color: #fef08a;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  }
+}
+.react-pdf__Page__textContent mark.search-highlight--active {
+  animation: pulse 1s ease-in-out 2;
+}

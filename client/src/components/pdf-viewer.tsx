@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { Document, Page } from "@/lib/reactPdf";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +28,20 @@ interface PDFViewerProps {
   currentResultIndex: number;
   currentPage: number;
   onPageChange: (page: number) => void;
-  onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  // --- CHANGE 1: Update the prop to expect a File, not the full event ---
+  onFileUpload: (file: File) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   isUploading: boolean;
   searchQuery: string;
+}
+
+function highlightPattern(text: string, pattern: string): string {
+  if (!pattern || !pattern.trim()) {
+    return text;
+  }
+  const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(escapedPattern, 'gi');
+  return text.replace(regex, (value) => `<mark>${value}</mark>`);
 }
 
 export function PDFViewer({
@@ -45,6 +55,9 @@ export function PDFViewer({
   isUploading,
   searchQuery,
 }: PDFViewerProps) {
+  const dropZoneRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<HTMLDivElement>(null);
+  const [numPages, setNumPages] = useState<number>();
 
   console.log("[PDFViewer Render] Props received:", {
     searchQuery,
@@ -52,9 +65,6 @@ export function PDFViewer({
     currentResultIndex,
     activeResult: searchResults[currentResultIndex],
   });
-
-  const dropZoneRef = useRef<HTMLDivElement>(null);
-  const [numPages, setNumPages] = useState<number>();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -88,61 +98,84 @@ export function PDFViewer({
       if (files.length > 0) {
         const file = files[0];
         if (file.type === "application/pdf") {
-          const event = {
-            target: { files: [file] },
-          } as React.ChangeEvent<HTMLInputElement>;
-          onFileUpload(event);
+          // --- CHANGE 2: Call onFileUpload directly with the file. No more fake events! ---
+          onFileUpload(file);
         }
       }
     },
     [onFileUpload],
   );
+  
+  // --- CHANGE 3: Create a handler to adapt the input's onChange event to our new prop type ---
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      onFileUpload(file);
+    }
+  };
 
-  // --- FIX IS HERE ---
-  // Get the currently active search result
+  useEffect(() => {
+    if (!viewerRef.current || searchResults.length === 0) {
+      return;
+    }
+
+    // Find and remove the class from any previously active highlight
+    const previousActive = viewerRef.current.querySelector('.search-highlight--active');
+    if (previousActive) {
+      previousActive.classList.remove('search-highlight--active');
+    }
+
+    const activeResult = searchResults[currentResultIndex];
+    if (!activeResult || activeResult.pageNumber !== currentPage) {
+      return;
+    }
+
+    // Find all results that are supposed to be on the current page
+    const resultsOnPage = searchResults.filter(
+      (result) => result.pageNumber === currentPage
+    );
+
+    // Find the index of our active result WITHIN the list of results for this page
+    const indexOnPage = resultsOnPage.findIndex(
+      (result) => result.index === activeResult.index
+    );
+      
+    if (indexOnPage === -1) {
+      return;
+    }
+      
+    // Get all rendered <mark> elements. Their order should match the order of resultsOnPage.
+    const markElements = viewerRef.current.querySelectorAll('.react-pdf__Page__textContent mark');
+      
+    const targetElement = markElements[indexOnPage];
+    
+    if (targetElement) {
+      // Add the animation class
+      targetElement.classList.add('search-highlight--active');
+      
+      // Scroll the element into view for better UX
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+
+  }, [currentResultIndex, currentPage, searchResults, document]); 
+
   const activeResult = searchResults[currentResultIndex];
 
-  const renderText = useCallback(
-    ({ str }: { str: string }) => {
-      // --- DEBUG LINE 2 ---
-      // Log every time the renderer is called for a piece of text.
-      console.log(`[renderText Called] for page ${currentPage}`, { textChunk: str });
-
-      // Condition to activate highlighting:
-      if (!searchQuery || !activeResult || currentPage !== activeResult.pageNumber) {
-        // --- DEBUG LINE 3 ---
-        // This will tell us if we are exiting early.
-        console.log("  -> Bypassing highlight logic.");
-        return str;
-      }
-
-      // --- DEBUG LINE 4 ---
-      // If we passed the check, log that we are attempting to highlight.
-      console.log("  -> Applying highlight logic...");
-
-      const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const parts = str.split(new RegExp(`(${escapedQuery})`, "gi"));
-
-      // --- DEBUG LINE 5 ---
-      // See how the text was split. If this array has only 1 item, the match failed.
-      console.log("    -> Split parts:", parts);
-
-      return (
-        <>
-          {parts.map((part, i) =>
-            part.toLowerCase() === searchQuery.toLowerCase() ? (
-              <mark key={i} className="bg-yellow-300 rounded px-0.5 animate-pulse-highlight">
-                {part}
-              </mark>
-            ) : (
-              part
-            ),
-          )}
-        </>
-      );
-    },
-    [searchQuery, activeResult, currentPage],
+  const customTextRenderer = useCallback(
+    (textItem: any) => highlightPattern(textItem.str, searchQuery),
+    [searchQuery]
   );
+
+  const handleDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
+    console.log("[Document Load Success] Pages:", numPages);
+    setNumPages(numPages);
+    if (currentPage > numPages) {
+      onPageChange(1);
+    }
+  }, [currentPage, onPageChange]);
 
   if (!document) {
     return (
@@ -189,7 +222,8 @@ export function PDFViewer({
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf"
-                onChange={onFileUpload}
+                // --- CHANGE 4: Use the new handler for the input ---
+                onChange={handleInputChange}
                 className="hidden"
               />
             </>
@@ -200,7 +234,6 @@ export function PDFViewer({
   }
 
   const fileUrl = `/api/documents/${document.id}/file`;
-  const options = { cMapUrl: "/cmaps/", standardFontDataUrl: "/standard_fonts/" };
   
   return (
     <div className="h-full overflow-auto bg-gray-50">
@@ -224,24 +257,21 @@ export function PDFViewer({
         </div>
       </div>
 
-      <div className="flex justify-center p-4">
+      <div ref={viewerRef} className="flex justify-center p-4">
         <Document
           file={fileUrl}
-          onLoadSuccess={({ numPages }) => {
-            setNumPages(numPages);
-            if (currentPage > numPages) onPageChange(1);
-          }}
+          onLoadSuccess={handleDocumentLoadSuccess}
           loading={
             <Loader2 className="animate-spin text-blue-600 mt-20" size={32} />
           }
         >
           <Page
-            key={currentPage} // Adding a key forces a re-mount, ensuring highlight logic re-runs
+            key={currentPage} 
             pageNumber={currentPage}
             width={800}
-            renderTextLayer
-            renderAnnotationLayer
-            customTextRenderer={renderText}
+            renderTextLayer={true}
+            renderAnnotationLayer={false}
+            customTextRenderer={customTextRenderer}
           />
         </Document>
       </div>
