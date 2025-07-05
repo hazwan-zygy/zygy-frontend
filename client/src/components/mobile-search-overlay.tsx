@@ -65,6 +65,8 @@ interface MobileSearchOverlayProps {
   onSelectDocument: (document: PdfDocument) => void;
   onDeleteDocument: (id: number) => void;
   isSearching: boolean;
+  highlightedPage: number | null;
+  onChunkSelect: (page: number) => void;
   isDeleting: boolean;
 }
 
@@ -86,6 +88,8 @@ export function MobileSearchOverlay({
   onSelectDocument,
   onDeleteDocument,
   isSearching,
+  highlightedPage,
+  onChunkSelect,
   isDeleting,
 }: MobileSearchOverlayProps) {
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
@@ -230,6 +234,42 @@ export function MobileSearchOverlay({
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>{formatFileSize(selectedDocument.fileSize)}</span>
                   <span>{selectedDocument.totalPages} pages</span>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Page Chunk Selection */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Highlight Page</Label>
+                  {highlightedPage && (
+                    <Button
+                      variant="link"
+                      onClick={onClearSearch}
+                      className="h-auto p-0 text-xs"
+                    >
+                      Clear selection
+                    </Button>
+                  )}
+                </div>
+                {/* A scrollable container for the page buttons */}
+                <div className="w-full overflow-x-auto rounded-md border bg-gray-50/50 p-1">
+                  <div className="flex w-max space-x-2">
+                    {Array.from({ length: selectedDocument.totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <Button
+                          key={page}
+                          variant={highlightedPage === page ? "default" : "secondary"}
+                          size="sm"
+                          onClick={() => onChunkSelect(page)}
+                          className="h-8 shrink-0 px-3"
+                        >
+                          Page {page}
+                        </Button>
+                      ),
+                    )}
+                  </div>
                 </div>
               </div>
 

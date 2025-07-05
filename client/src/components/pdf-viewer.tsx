@@ -28,11 +28,11 @@ interface PDFViewerProps {
   currentResultIndex: number;
   currentPage: number;
   onPageChange: (page: number) => void;
-  // --- CHANGE 1: Update the prop to expect a File, not the full event ---
   onFileUpload: (file: File) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   isUploading: boolean;
   searchQuery: string;
+  highlightedPage: number | null;
 }
 
 function highlightPattern(text: string, pattern: string): string {
@@ -54,6 +54,7 @@ export function PDFViewer({
   fileInputRef,
   isUploading,
   searchQuery,
+  highlightedPage,
 }: PDFViewerProps) {
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -96,17 +97,12 @@ export function PDFViewer({
       }
       const files = e.dataTransfer.files;
       if (files.length > 0) {
-        const file = files[0];
-        if (file.type === "application/pdf") {
-          // --- CHANGE 2: Call onFileUpload directly with the file. No more fake events! ---
-          onFileUpload(file);
-        }
+        onFileUpload(files[0]);
       }
     },
     [onFileUpload],
   );
   
-  // --- CHANGE 3: Create a handler to adapt the input's onChange event to our new prop type ---
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
@@ -221,8 +217,7 @@ export function PDFViewer({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf"
-                // --- CHANGE 4: Use the new handler for the input ---
+                accept="application/pdf"
                 onChange={handleInputChange}
                 className="hidden"
               />
@@ -268,6 +263,7 @@ export function PDFViewer({
           <Page
             key={currentPage} 
             pageNumber={currentPage}
+            className={highlightedPage === currentPage ? "page-is-highlighted" : ""}
             width={800}
             renderTextLayer={true}
             renderAnnotationLayer={false}

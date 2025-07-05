@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+
 import {
   Select,
   SelectContent,
@@ -64,6 +65,8 @@ interface SearchInterfaceProps {
   onSelectDocument: (document: PdfDocument) => void;
   onDeleteDocument: (id: number) => void;
   isSearching: boolean;
+  highlightedPage: number | null;
+  onChunkSelect: (page: number) => void;
   isDeleting: boolean;
 }
 
@@ -83,6 +86,8 @@ export function SearchInterface({
   onSelectDocument,
   onDeleteDocument,
   isSearching,
+  highlightedPage,
+  onChunkSelect,
   isDeleting,
 }: SearchInterfaceProps) {
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
@@ -99,6 +104,12 @@ export function SearchInterface({
       onSearch(query);
     }, 1000); // 300ms delay
   }, [onSearch]);
+
+  function generateCitationLink(docId: number, pageNum: number) {
+    // In a real app, you would use your actual domain
+    const baseUrl = window.location.origin; 
+    return `${baseUrl}/documents/${docId}/page/${pageNum}`;
+  }
 
   const handleSearchInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -141,6 +152,8 @@ export function SearchInterface({
       ) : part
     );
   };
+
+  const linkForPage1 = selectedDocument ? generateCitationLink(selectedDocument.id, 1) : "";
 
   return (
     <Card className="h-full overflow-hidden">
@@ -201,6 +214,43 @@ export function SearchInterface({
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>{formatFileSize(selectedDocument.fileSize)}</span>
                 <span>{selectedDocument.totalPages} pages</span>
+              </div>
+            </div>
+
+            <Separator />
+            <a href={linkForPage1}>P1</a>
+            
+            {/* Page Chunk Selection */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Highlight Page</Label>
+                {highlightedPage && (
+                  <Button
+                    variant="link"
+                    onClick={onClearSearch}
+                    className="h-auto p-0 text-xs"
+                  >
+                    Clear selection
+                  </Button>
+                )}
+              </div>
+              {/* A scrollable container for the page buttons */}
+              <div className="w-full overflow-x-auto rounded-md border bg-gray-50/50 p-1">
+                <div className="flex w-max space-x-2">
+                  {Array.from({ length: selectedDocument.totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <Button
+                        key={page}
+                        variant={highlightedPage === page ? "default" : "secondary"}
+                        size="sm"
+                        onClick={() => onChunkSelect(page)}
+                        className="h-8 shrink-0 px-3"
+                      >
+                        Page {page}
+                      </Button>
+                    ),
+                  )}
+                </div>
               </div>
             </div>
 

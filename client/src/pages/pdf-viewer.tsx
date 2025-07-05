@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useRoute } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ interface SearchResult {
 
 export default function PDFViewerPage() {
   const [selectedDocument, setSelectedDocument] = useState<PdfDocument | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const [searchOptions, setSearchOptions] = useState({
@@ -53,12 +54,16 @@ export default function PDFViewerPage() {
     wholeWords: false,
   });
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [highlightedPage, setHighlightedPage] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  // Match the route for deep linking
+  const [, params] = useRoute("/documents/:docId/page/:pageNum");
 
   // Fetch documents
   const { data: documents = [], isLoading: documentsLoading } = useQuery<PdfDocument[]>({
@@ -127,7 +132,7 @@ export default function PDFViewerPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
       setSelectedDocument(null);
       setSearchResults([]);
-      setSearchQuery("");
+      setSearchTerm("");
       toast({
         title: "Document deleted",
         description: "The PDF document has been deleted successfully.",
@@ -155,18 +160,19 @@ export default function PDFViewerPage() {
   }, [uploadMutation, toast]);
 
   const handleSearch = useCallback((query: string) => {
+    setHighlightedPage(null); // Clear chunk highlight on new search
     if (!selectedDocument || !query.trim()) {
       setSearchResults([]);
       return;
     }
     
-    setSearchQuery(query);
+    setSearchTerm(query);
     searchMutation.mutate({
       documentId: selectedDocument.id,
       query: query.trim(),
       options: searchOptions,
     });
-  }, [selectedDocument, searchOptions, searchMutation]);
+  }, [selectedDocument, searchOptions, searchMutation, setHighlightedPage]);
 
   const handleNextResult = useCallback(() => {
     if (searchResults.length > 0) {
@@ -188,10 +194,35 @@ export default function PDFViewerPage() {
   }, [searchResults]);
 
   const handleClearSearch = useCallback(() => {
-    setSearchQuery("");
     setSearchResults([]);
-    setCurrentResultIndex(0);
+    setSearchTerm("");
+    setHighlightedPage(null); // Also clear chunk highlight
   }, []);
+
+  const handleChunkSelect = useCallback((page: number) => {
+    handleClearSearch(); // Clear any existing search
+    setCurrentPage(page);
+    setHighlightedPage(page);
+  }, [handleClearSearch]);
+
+  // Effect for handling deep links from the URL
+  useEffect(() => {
+    // Only run if we have documents, URL params, and no document is currently selected
+    if (documents.length > 0 && params?.docId && !selectedDocument) {
+      const docId = parseInt(params.docId, 10);
+      const pageNum = parseInt(params.pageNum, 10);
+
+      const docToSelect = documents.find(d => d.id === docId);
+
+      if (docToSelect && pageNum > 0 && pageNum <= docToSelect.totalPages) {
+        setSelectedDocument(docToSelect);
+        // We use the chunk select handler to set all the related states correctly
+        handleChunkSelect(pageNum);
+        // For mobile, we should also open the search overlay
+        if (isMobile) setShowMobileSearch(true);
+      }
+    }
+  }, [documents, params, selectedDocument, isMobile]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -270,7 +301,8 @@ export default function PDFViewerPage() {
                   onFileUpload={handleFileUpload}
                   fileInputRef={fileInputRef}
                   isUploading={uploadMutation.isPending}
-                  searchQuery={searchQuery}
+                  searchQuery={searchTerm}
+                  highlightedPage={highlightedPage}
                 />
               </CardContent>
             </Card>
@@ -280,7 +312,7 @@ export default function PDFViewerPage() {
           {!isMobile && (
             <div className="lg:col-span-1">
               <SearchInterface
-                searchQuery={searchQuery}
+                searchQuery={searchTerm}
                 searchResults={searchResults}
                 currentResultIndex={currentResultIndex}
                 searchOptions={searchOptions}
@@ -292,6 +324,8 @@ export default function PDFViewerPage() {
                 onPrevResult={handlePrevResult}
                 onJumpToResult={handleJumpToResult}
                 onClearSearch={handleClearSearch}
+                onChunkSelect={handleChunkSelect}
+                highlightedPage={highlightedPage}
                 onSelectDocument={setSelectedDocument}
                 onDeleteDocument={(id) => deleteMutation.mutate(id)}
                 isSearching={searchMutation.isPending}
@@ -307,7 +341,7 @@ export default function PDFViewerPage() {
         <MobileSearchOverlay
           isOpen={showMobileSearch}
           onClose={() => setShowMobileSearch(false)}
-          searchQuery={searchQuery}
+          searchQuery={searchTerm}
           searchResults={searchResults}
           currentResultIndex={currentResultIndex}
           searchOptions={searchOptions}
@@ -319,6 +353,8 @@ export default function PDFViewerPage() {
           onPrevResult={handlePrevResult}
           onJumpToResult={handleJumpToResult}
           onClearSearch={handleClearSearch}
+          onChunkSelect={handleChunkSelect}
+          highlightedPage={highlightedPage}
           onSelectDocument={setSelectedDocument}
           onDeleteDocument={(id) => deleteMutation.mutate(id)}
           isSearching={searchMutation.isPending}

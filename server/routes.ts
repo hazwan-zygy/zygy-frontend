@@ -108,6 +108,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Get a specific page's text content
+  app.get("/api/documents/:id/page/:pageNumber", async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const pageNumber = parseInt(req.params.pageNumber);
+
+      const document = await storage.getPdfDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      if (pageNumber < 1 || pageNumber > document.totalPages) {
+        return res.status(400).json({ error: "Invalid page number" });
+      }
+
+      // Read the stored PDF file into a buffer
+      const filePath = path.resolve(process.cwd(), "uploads", document.filename);
+      const pdfBuffer = await fs.promises.readFile(filePath);
+      
+      const pdfData = new Uint8Array(pdfBuffer);
+      const pdf = await pdfjs.getDocument(pdfData).promise;
+      const page = await pdf.getPage(pageNumber);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(" ");
+
+      res.json({ id: documentId, page: pageNumber, text: pageText });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to retrieve page content" });
+    }
+  });
+
   // Search text in a PDF document
   app.post("/api/documents/:id/search", async (req, res) => {
     try {

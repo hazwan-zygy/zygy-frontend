@@ -158,3 +158,8 @@
 .react-pdf__Page__textContent mark.search-highlight--active {
   animation: pulse 1s ease-in-out 2;
 }
+
+.page-is-highlighted .react-pdf__Page__textContent span {
+  background-color: rgba(135, 206, 250, 0.4) !important;
+  border-radius: 2px;
+}

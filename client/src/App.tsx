@@ -12,6 +12,7 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
+      <Route path="/documents/:docId/page/:pageNum" component={PDFViewerPage} />
       <Route path="/" component={PDFViewerPage} />
       <Route component={NotFound} />
     </Switch>
