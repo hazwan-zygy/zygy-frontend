@@ -117,6 +117,11 @@ export function SearchInterface({
     debouncedSearch(value);
   }, [debouncedSearch]);
 
+  // Sync local query when the parent query changes (e.g., from a URL param)
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
+
   // Clean up timeout on unmount
   useEffect(() => {
     return () => {

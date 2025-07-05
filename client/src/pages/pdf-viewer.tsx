@@ -161,12 +161,13 @@ export default function PDFViewerPage() {
 
   const handleSearch = useCallback((query: string) => {
     setHighlightedPage(null); // Clear chunk highlight on new search
+    setSearchTerm(query);
+
     if (!selectedDocument || !query.trim()) {
       setSearchResults([]);
       return;
     }
     
-    setSearchTerm(query);
     searchMutation.mutate({
       documentId: selectedDocument.id,
       query: query.trim(),
@@ -205,21 +206,36 @@ export default function PDFViewerPage() {
     setHighlightedPage(page);
   }, [handleClearSearch]);
 
-  // Effect for handling deep links from the URL
+  // Effect for handling deep links from the URL. Runs once when documents are loaded.
   useEffect(() => {
-    // Only run if we have documents, URL params, and no document is currently selected
-    if (documents.length > 0 && params?.docId && !selectedDocument) {
-      const docId = parseInt(params.docId, 10);
-      const pageNum = parseInt(params.pageNum, 10);
+    // Guard: Only run if we have documents, URL params, and no document is currently selected
+    if (documents.length === 0 || !params?.docId || selectedDocument) {
+      return;
+    }
 
-      const docToSelect = documents.find(d => d.id === docId);
+    const docId = parseInt(params.docId, 10);
+    const pageNum = parseInt(params.pageNum, 10);
+    const docToSelect = documents.find((d) => d.id === docId);
 
-      if (docToSelect && pageNum > 0 && pageNum <= docToSelect.totalPages) {
-        setSelectedDocument(docToSelect);
-        // We use the chunk select handler to set all the related states correctly
+    if (docToSelect && pageNum > 0 && pageNum <= docToSelect.totalPages) {
+      setSelectedDocument(docToSelect);
+      setCurrentPage(pageNum);
+
+      const searchParams = new URLSearchParams(window.location.search);
+      const queryFromUrl = searchParams.get("q");
+
+      if (queryFromUrl) {
+        // If there's a search query, perform a search directly to avoid stale state
+        setHighlightedPage(null);
+        setSearchTerm(queryFromUrl);
+        searchMutation.mutate({
+          documentId: docToSelect.id, // Use the fresh docToSelect
+          query: queryFromUrl.trim(),
+          options: searchOptions,
+        });
+      } else {
+        // Otherwise, do the full-page highlight
         handleChunkSelect(pageNum);
-        // For mobile, we should also open the search overlay
-        if (isMobile) setShowMobileSearch(true);
       }
     }
   }, [documents, params, selectedDocument, isMobile]);
