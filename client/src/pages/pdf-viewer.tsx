@@ -24,6 +24,7 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { PDFViewer } from "@/components/pdf-viewer";
 import { SearchInterface } from "@/components/search-interface";
+import { ChatInterface } from "@/components/chat-interface";
 import { MobileSearchOverlay } from "@/components/mobile-search-overlay";
 
 interface PdfDocument {
@@ -160,7 +161,7 @@ export default function PDFViewerPage() {
   }, [uploadMutation, toast]);
 
   const handleSearch = useCallback((query: string) => {
-    setHighlightedPage(null); // Clear chunk highlight on new search
+    setHighlightedPage(null);
     setSearchTerm(query);
 
     if (!selectedDocument || !query.trim()) {
@@ -197,18 +198,17 @@ export default function PDFViewerPage() {
   const handleClearSearch = useCallback(() => {
     setSearchResults([]);
     setSearchTerm("");
-    setHighlightedPage(null); // Also clear chunk highlight
+    setHighlightedPage(null);
   }, []);
 
   const handleChunkSelect = useCallback((page: number) => {
-    handleClearSearch(); // Clear any existing search
+    handleClearSearch();
     setCurrentPage(page);
     setHighlightedPage(page);
   }, [handleClearSearch]);
 
-  // Effect for handling deep links from the URL. Runs once when documents are loaded.
+  // Effect for handling deep links from the URL
   useEffect(() => {
-    // Guard: Only run if we have documents, URL params, and no document is currently selected
     if (documents.length === 0 || !params?.docId || selectedDocument) {
       return;
     }
@@ -225,23 +225,21 @@ export default function PDFViewerPage() {
       const queryFromUrl = searchParams.get("q");
 
       if (queryFromUrl) {
-        // If there's a search query, perform a search directly to avoid stale state
         setHighlightedPage(null);
         setSearchTerm(queryFromUrl);
         searchMutation.mutate({
-          documentId: docToSelect.id, // Use the fresh docToSelect
+          documentId: docToSelect.id,
           query: queryFromUrl.trim(),
           options: searchOptions,
         });
       } else {
-        // Otherwise, do the full-page highlight
         handleChunkSelect(pageNum);
       }
     }
   }, [documents, params, selectedDocument, isMobile]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -269,12 +267,13 @@ export default function PDFViewerPage() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-8rem)]">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+        {/* Top Row - PDF Viewer and Chat Interface */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
           
-          {/* Left Column - PDF Viewer */}
-          <div className="lg:col-span-2">
-            <Card className="h-full overflow-hidden">
+          {/* PDF Viewer */}
+          <div className="lg:col-span-2 h-full">
+            <Card className="h-full flex flex-col">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">PDF Document</CardTitle>
@@ -307,7 +306,7 @@ export default function PDFViewerPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="h-full p-0">
+              <CardContent className="flex-1 p-0">
                 <PDFViewer
                   document={selectedDocument}
                   searchResults={searchResults}
@@ -324,33 +323,40 @@ export default function PDFViewerPage() {
             </Card>
           </div>
 
-          {/* Right Column - Search Interface */}
+          {/* Chat Interface */}
           {!isMobile && (
-            <div className="lg:col-span-1">
-              <SearchInterface
-                searchQuery={searchTerm}
-                searchResults={searchResults}
-                currentResultIndex={currentResultIndex}
-                searchOptions={searchOptions}
-                selectedDocument={selectedDocument}
-                documents={documents}
-                onSearch={handleSearch}
-                onSearchOptionsChange={setSearchOptions}
-                onNextResult={handleNextResult}
-                onPrevResult={handlePrevResult}
-                onJumpToResult={handleJumpToResult}
-                onClearSearch={handleClearSearch}
-                onChunkSelect={handleChunkSelect}
-                highlightedPage={highlightedPage}
-                onSelectDocument={setSelectedDocument}
-                onDeleteDocument={(id) => deleteMutation.mutate(id)}
-                isSearching={searchMutation.isPending}
-                isDeleting={deleteMutation.isPending}
-              />
+            <div className="lg:col-span-1 h-full">
+              <ChatInterface selectedDocument={selectedDocument} />
             </div>
           )}
         </div>
-      </div>
+
+        {/* Bottom Row - Search Interface (Full Width) */}
+        {!isMobile && (
+          <div className="h-80">
+            <SearchInterface
+              searchQuery={searchTerm}
+              searchResults={searchResults}
+              currentResultIndex={currentResultIndex}
+              searchOptions={searchOptions}
+              selectedDocument={selectedDocument}
+              documents={documents}
+              onSearch={handleSearch}
+              onSearchOptionsChange={setSearchOptions}
+              onNextResult={handleNextResult}
+              onPrevResult={handlePrevResult}
+              onJumpToResult={handleJumpToResult}
+              onClearSearch={handleClearSearch}
+              onChunkSelect={handleChunkSelect}
+              highlightedPage={highlightedPage}
+              onSelectDocument={setSelectedDocument}
+              onDeleteDocument={(id) => deleteMutation.mutate(id)}
+              isSearching={searchMutation.isPending}
+              isDeleting={deleteMutation.isPending}
+            />
+          </div>
+        )}
+      </main>
 
       {/* Mobile Search Overlay */}
       {isMobile && (
