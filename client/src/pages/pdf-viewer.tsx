@@ -19,13 +19,15 @@ import {
   X,
   FileText,
   Download,
-  Trash2
+  Trash2,
+  SquareDashedMousePointer
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { PDFViewer } from "@/components/pdf-viewer";
 import { SearchInterface } from "@/components/search-interface";
 import { ChatInterface } from "@/components/chat-interface";
 import { MobileSearchOverlay } from "@/components/mobile-search-overlay";
+import { useLocation } from "wouter";
 
 interface PdfDocument {
   id: number;
@@ -201,15 +203,25 @@ export default function PDFViewerPage() {
     setHighlightedPage(null);
   }, []);
 
-  const handleChunkSelect = useCallback((page: number) => {
-    handleClearSearch();
+  const handleChunkSelect = useCallback((page: number, keywordToHighlight?: string) => {
+    // Clear any previous full-text search results
+    setSearchResults([]);
+    
+    // This is the key change: set the search term for highlighting.
+    // If a keyword is provided, use it. Otherwise, clear the term.
+    setSearchTerm(keywordToHighlight || "");
+    
+    // Navigate to the correct page
     setCurrentPage(page);
+    
+    // Visually highlight the entire page container
     setHighlightedPage(page);
-  }, [handleClearSearch]);
+  }, []); // Dependencies are removed because we are using setter functions which are stable.
 
-  // Effect for handling deep links from the URL
+  // Effect for handling deep links from the URL, now reactive to SPA navigation
   useEffect(() => {
-    if (documents.length === 0 || !params?.docId || selectedDocument) {
+    // Guard against running before documents are loaded or URL params are available
+    if (documents.length === 0 || !params?.docId) {
       return;
     }
 
@@ -217,14 +229,26 @@ export default function PDFViewerPage() {
     const pageNum = parseInt(params.pageNum, 10);
     const docToSelect = documents.find((d) => d.id === docId);
 
-    if (docToSelect && pageNum > 0 && pageNum <= docToSelect.totalPages) {
-      setSelectedDocument(docToSelect);
-      setCurrentPage(pageNum);
+    // If the document from the URL doesn't exist, do nothing
+    if (!docToSelect || !(pageNum > 0 && pageNum <= docToSelect.totalPages)) {
+      return;
+    }
 
+    // Check if the URL state is different from the current component state.
+    // This is the key change: it allows updates even when a document is already selected.
+    const needsUpdate =
+      selectedDocument?.id !== docId || currentPage !== pageNum;
+
+    if (needsUpdate) {
+      console.log(`[Deep Link] Navigating to Doc ${docId}, Page ${pageNum}`);
+      setSelectedDocument(docToSelect);
+      
+      // Check for a search query in the URL (optional but good to keep)
       const searchParams = new URLSearchParams(window.location.search);
       const queryFromUrl = searchParams.get("q");
 
       if (queryFromUrl) {
+        // If there's a search query, run the search
         setHighlightedPage(null);
         setSearchTerm(queryFromUrl);
         searchMutation.mutate({
@@ -232,23 +256,26 @@ export default function PDFViewerPage() {
           query: queryFromUrl.trim(),
           options: searchOptions,
         });
+        // Also jump to the correct page while search happens
+        setCurrentPage(pageNum);
       } else {
+        // If no search query, just select and highlight the page chunk
         handleChunkSelect(pageNum);
       }
     }
-  }, [documents, params, selectedDocument, isMobile]);
+  }, [documents, params, selectedDocument, currentPage, handleChunkSelect]); 
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-200 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <FileText className="text-white" size={16} />
+              <div className="w-8 h-8 bg-cyan-700 rounded-lg flex items-center justify-center">
+                <SquareDashedMousePointer className="text-white" size={16} />
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">PDF Search Tool</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Zygy Demo</h1>
             </div>
             
             {/* Mobile search toggle */}
@@ -269,23 +296,23 @@ export default function PDFViewerPage() {
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
         {/* Top Row - PDF Viewer and Chat Interface */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 flex-1 min-h-0">
           
           {/* PDF Viewer */}
-          <div className="lg:col-span-2 h-full">
-            <Card className="h-full flex flex-col">
+          <div className="lg:col-span-3 h-full">
+            <Card className="h-full flex flex-col bg-slate-700">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">PDF Document</CardTitle>
+                  <CardTitle className="text-lg text-white">PDF Document</CardTitle>
                   <div className="flex items-center space-x-2">
                     {selectedDocument && (
                       <>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-50 text-white pr-4">
                           Page {currentPage} of {selectedDocument.totalPages}
                         </span>
                         <div className="flex items-center space-x-1">
                           <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="icon"
                             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                             disabled={currentPage <= 1}
@@ -293,7 +320,7 @@ export default function PDFViewerPage() {
                             <ChevronLeft size={16} />
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="icon"
                             onClick={() => setCurrentPage(prev => Math.min(selectedDocument.totalPages, prev + 1))}
                             disabled={currentPage >= selectedDocument.totalPages}
@@ -325,8 +352,11 @@ export default function PDFViewerPage() {
 
           {/* Chat Interface */}
           {!isMobile && (
-            <div className="lg:col-span-1 h-full">
-              <ChatInterface selectedDocument={selectedDocument} />
+            <div className="lg:col-span-2 h-full shadow-2xl">
+              <ChatInterface
+                selectedDocument={selectedDocument}
+                onSourceClick={handleChunkSelect}
+              />
             </div>
           )}
         </div>
