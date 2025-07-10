@@ -223,7 +223,6 @@ export function SearchInterface({
             </div>
 
             <Separator />
-            <a href={linkForPage1}>P1</a>
             
             {/* Page Chunk Selection */}
             <div className="space-y-2">

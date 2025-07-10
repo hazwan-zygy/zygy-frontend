@@ -1,7 +1,7 @@
 // File: server/routes.ts
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./storage/index";
 import multer from "multer";
 import { insertPdfDocumentSchema } from "@shared/schema";
 import { z } from "zod";

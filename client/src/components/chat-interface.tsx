@@ -27,9 +27,11 @@ interface ChatMessage {
 interface ChatInterfaceProps {
   selectedDocument?: { id: number; originalName: string } | null;
   onSourceClick?: (page: number, keyword?: string) => void;
+  highlightedPage?: number | null;
+  onClearHighlight?: () => void;
 }
 
-export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterfaceProps) {
+export function ChatInterface({ selectedDocument, onSourceClick, highlightedPage, onClearHighlight }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -185,11 +187,23 @@ export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterface
           <Bot size={20} className="text-blue-600" />
           Chat Assistant
         </CardTitle>
-        {selectedDocument && (
-          <Badge variant="secondary" className="text-xs w-fit">
-            Discussing: {selectedDocument.originalName}
-          </Badge>
-        )}
+        {/* Replace the single Badge component with this new div */}
+        <div className="flex items-center justify-between mt-1">
+          {selectedDocument && (
+            <Badge variant="secondary" className="text-xs w-fit">
+              Discussing: {selectedDocument.originalName}
+            </Badge>
+          )}
+          {highlightedPage && (
+            <Button
+              variant="link"
+              onClick={onClearHighlight}
+              className="h-auto p-0 text-xs text-blue-600 hover:text-blue-800"
+            >
+              Clear highlight
+            </Button>
+          )}
+        </div>
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col p-4 pt-0 overflow-hidden">

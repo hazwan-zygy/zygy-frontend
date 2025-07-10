@@ -266,7 +266,7 @@ export default function PDFViewerPage() {
   }, [documents, params, selectedDocument, currentPage, handleChunkSelect]); 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-200 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -354,6 +354,8 @@ export default function PDFViewerPage() {
               <ChatInterface
                 selectedDocument={selectedDocument}
                 onSourceClick={handleChunkSelect}
+                highlightedPage={highlightedPage}
+                onClearHighlight={handleClearSearch}
               />
             </div>
           )}
