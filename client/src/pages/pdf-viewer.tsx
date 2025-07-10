@@ -272,9 +272,7 @@ export default function PDFViewerPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-cyan-700 rounded-lg flex items-center justify-center">
-                <SquareDashedMousePointer className="text-white" size={16} />
-              </div>
+              <img src="/whale.svg" alt="Whale logo" className="w-10 h-10" />
               <h1 className="text-xl font-semibold text-gray-900">Zygy Demo</h1>
             </div>
             
@@ -300,8 +298,8 @@ export default function PDFViewerPage() {
           
           {/* PDF Viewer */}
           <div className="lg:col-span-3 h-full">
-            <Card className="h-full flex flex-col bg-slate-700">
-              <CardHeader className="pb-4">
+            <Card className="h-full flex flex-col bg-zinc-700">
+              <CardHeader className="pb-6">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg text-white">PDF Document</CardTitle>
                   <div className="flex items-center space-x-2">

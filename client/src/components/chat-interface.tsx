@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, Bot, User, Loader2, BookOpen } from "lucide-react";
+import { Send, Bot, User, Loader2, BookOpen, Search } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,49 +32,53 @@ interface ChatInterfaceProps {
 export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false); 
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const chatMutation = useMutation({
-    mutationFn: async ({ documentId, message }: { documentId: number; message: string }) => {
-      const response = await apiRequest("POST", `/api/documents/${documentId}/chat`, { query: message });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      const botMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        content: data.response,
-        sender: 'bot',
-        timestamp: new Date(),
-        sources: data.sources,
-      };
-      setMessages(prev => [...prev, botMessage]);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Chat Error",
-        description: error?.message || "An unknown error occurred.",
-        variant: "destructive",
-      });
-       const botMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        content: "Sorry, I encountered an error. Please ensure the embedding service is running and try again.",
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, botMessage]);
-    },
-  });
+  // const chatMutation = useMutation({
+  //   mutationFn: async ({ documentId, message }: { documentId: number; message: string }) => {
+  //     const response = await apiRequest("POST", `/api/documents/${documentId}/chat`, { query: message });
+  //     return response.json();
+  //   },
+  //   onSuccess: (data) => {
+  //     const botMessage: ChatMessage = {
+  //       id: (Date.now() + 1).toString(),
+  //       content: data.response,
+  //       sender: 'bot',
+  //       timestamp: new Date(),
+  //       sources: data.sources,
+  //     };
+  //     setMessages(prev => [...prev, botMessage]);
+  //   },
+  //   onError: (error: any) => {
+  //     toast({
+  //       title: "Chat Error",
+  //       description: error?.message || "An unknown error occurred.",
+  //       variant: "destructive",
+  //     });
+  //      const botMessage: ChatMessage = {
+  //       id: (Date.now() + 1).toString(),
+  //       content: "Sorry, I encountered an error. Please ensure the embedding service is running and try again.",
+  //       sender: 'bot',
+  //       timestamp: new Date(),
+  //     };
+  //     setMessages(prev => [...prev, botMessage]);
+  //   },
+  // });
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, chatMutation.isPending]);
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [messages, isStreaming, currentStatus]);
   
-  useEffect(() => { setMessages([]); }, [selectedDocument]);
+  useEffect(() => { 
+    setMessages([]);
+    setCurrentStatus(null);
+  }, [selectedDocument]);
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !selectedDocument) return;
+    if (!inputMessage.trim() || !selectedDocument || isStreaming) return;
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content: inputMessage,
@@ -99,6 +103,7 @@ export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterface
     setMessages(prev => [...prev, userMessage, botMessage]);
     setInputMessage("");
     setIsStreaming(true);
+    setCurrentStatus("Initializing...");
 
     try {
       const response = await fetch(`/api/documents/${selectedDocument.id}/chat-stream`, {
@@ -117,22 +122,32 @@ export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterface
         const { value, done } = await reader.read();
         if (done) break;
 
-        // Process each Server-Sent Event chunk
+        // Process each Server-Sent Event which can contain multiple `data:` lines
         const eventChunks = value.split('\n\n').filter(Boolean);
         for (const chunk of eventChunks) {
           if (chunk.startsWith('data:')) {
-            const data = JSON.parse(chunk.substring(5));
-            
-            setMessages(prev => prev.map(msg => {
-              if (msg.id === botMessageId) {
-                // First event will have sources
-                const newSources = data.sources || msg.sources;
-                // Subsequent events will have content
-                const newContent = msg.content + (data.content || "");
-                return { ...msg, content: newContent, sources: newSources };
+            try {
+              const data = JSON.parse(chunk.substring(5));
+              
+              if (data.error) {
+                 throw new Error(data.error);
               }
-              return msg;
-            }));
+
+              if (data.status) {
+                setCurrentStatus(data.status);
+              }
+
+              setMessages(prev => prev.map(msg => {
+                if (msg.id === botMessageId) {
+                  const newSources = data.sources || msg.sources;
+                  const newContent = msg.content + (data.content || "");
+                  return { ...msg, content: newContent, sources: newSources };
+                }
+                return msg;
+              }));
+            } catch (e) {
+                console.error("Failed to parse stream chunk:", chunk, e);
+            }
           }
         }
       }
@@ -144,10 +159,11 @@ export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterface
         variant: "destructive",
       });
        setMessages(prev => prev.map(msg => 
-        msg.id === botMessageId ? { ...msg, content: "Sorry, an error occurred." } : msg
+        msg.id === botMessageId ? { ...msg, content: "Sorry, an error occurred while trying to respond." } : msg
       ));
     } finally {
       setIsStreaming(false);
+      setCurrentStatus(null);
     }
   };
 
@@ -159,6 +175,8 @@ export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterface
   };
 
   const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const showThinkingIndicator = isStreaming && messages[messages.length - 1]?.sender === 'bot' && messages[messages.length - 1]?.content === "";
 
   return (
     <Card className="h-full flex flex-col bg-slate-100">
@@ -194,7 +212,7 @@ export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterface
                     <Avatar className="w-8 h-8 mt-1 shrink-0"><AvatarFallback className="bg-blue-100 text-blue-600"><Bot size={14} /></AvatarFallback></Avatar>
                   )}
                   <div className="flex flex-col items-start max-w-[85%]">
-                    <div className={`rounded-lg px-3 py-2 ${message.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-white text-gray-900'}`}>
+                    <div className={`rounded-lg px-3 py-2 ${message.sender === 'user' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-900 shadow-lg'}`}>
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                       <span className={`text-xs mt-1 block ${message.sender === 'user' ? 'text-blue-100 text-right' : 'text-gray-500'}`}>{formatTime(message.timestamp)}</span>
                     </div>
@@ -208,11 +226,7 @@ export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterface
                                 variant="outline" 
                                 size="sm" 
                                 className="h-auto px-2 py-1 text-xs text-blue-600 border-blue-200 hover:bg-blue-50" 
-                                onClick={() => {
-                                  if (onSourceClick) {
-                                    onSourceClick(source.page_num, source.keyword || "");
-                                  }
-                                }}
+                                onClick={() => onSourceClick && onSourceClick(source.page_num, source.keyword || "")}
                               >
                                 <BookOpen size={12} className="mr-1.5" />
                                 Page {source.page_num} 
@@ -230,13 +244,15 @@ export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterface
               ))
             )}
             
-            {isStreaming && messages[messages.length - 1]?.sender === 'bot' && (
+            {showThinkingIndicator && (
               <div className="flex gap-3 justify-start">
-                <Avatar className="w-8 h-8 mt-1"><AvatarFallback className="bg-blue-100 text-blue-600"><Bot size={14} /></AvatarFallback></Avatar>
-                <div className="bg-gray-100 rounded-lg px-3 py-2">
+                <Avatar className="w-8 h-8 mt-1 shrink-0"><AvatarFallback className="bg-blue-100 text-blue-600"><Bot size={14} /></AvatarFallback></Avatar>
+                <div className="bg-white rounded-lg px-3 py-2 shadow-sm">
                   <div className="flex items-center gap-2">
                     <Loader2 size={14} className="animate-spin text-blue-600" />
-                    <span className="text-sm text-gray-600">Thinking...</span>
+                    <span className="text-sm text-gray-600">
+                      {currentStatus || 'Thinking...'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -245,9 +261,9 @@ export function ChatInterface({ selectedDocument, onSourceClick }: ChatInterface
           <div ref={messagesEndRef} />
         </ScrollArea>
         <div className="flex gap-2">
-          <Input value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} onKeyPress={handleKeyPress} placeholder={selectedDocument ? "Ask a question..." : "Select a document..."} disabled={!selectedDocument || chatMutation.isPending} className="flex-1" />
-          <Button onClick={handleSendMessage} disabled={!inputMessage.trim() || !selectedDocument || chatMutation.isPending} size="icon" className="shrink-0">
-            {chatMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+          <Input value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} onKeyPress={handleKeyPress} placeholder={selectedDocument ? "Ask a question..." : "Select a document..."} disabled={!selectedDocument || isStreaming} className="flex-1" />
+          <Button onClick={handleSendMessage} disabled={!inputMessage.trim() || !selectedDocument || isStreaming} size="icon" className="shrink-0">
+            {isStreaming ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
           </Button>
         </div>
       </CardContent>

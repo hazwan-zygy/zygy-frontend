@@ -11,6 +11,7 @@ import path from "node:path";
 import pdfParse from "pdf-parse";
 // Import the pdfjs library for server-side processing
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import fetch from 'node-fetch';
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -26,7 +27,7 @@ interface RagSource {
 }
 
 // --- RAG Integration Helpers ---
-const EMBEDDING_SERVICE_URL = "http://139.162.30.108:5001";
+const EMBEDDING_SERVICE_URL = "https://demo.zygy.com/api";
 
 async function indexDocumentInPythonService(documentId: number, pdfBuffer: Buffer) {
   try {
@@ -46,12 +47,11 @@ async function indexDocumentInPythonService(documentId: number, pdfBuffer: Buffe
     
     if (pagesPayload.length > 0) {
       console.log(`[RAG] Indexing ${pagesPayload.length} pages for doc ${documentId}`);
-      const res = await fetch(`${EMBEDDING_SERVICE_URL}/index_pages`, {
+      await fetch(`${EMBEDDING_SERVICE_URL}/index_pages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pages: pagesPayload }),
       });
-      if (!res.ok) throw new Error(`Embedding service responded with ${res.status}`);
     }
   } catch (error) {
     console.error(`[RAG] Failed to index document ${documentId}:`, error);
@@ -215,78 +215,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // --- NEW RAG CHAT ENDPOINT ---
-  app.post("/api/documents/:id/chat", async (req, res) => {
-    try {
-      const documentId = parseInt(req.params.id);
-      const { query } = req.body;
-      if (!query) return res.status(400).json({ error: "Query is required" });
+  // app.post("/api/documents/:id/chat", async (req, res) => {
+  //   try {
+  //     const documentId = parseInt(req.params.id);
+  //     const { query } = req.body;
+  //     if (!query) return res.status(400).json({ error: "Query is required" });
       
-      console.log(`[RAG] Received chat query for doc ${documentId}: "${query}"`);
+  //     console.log(`[RAG] Received chat query for doc ${documentId}: "${query}"`);
 
-      const searchRes = await fetch(`${EMBEDDING_SERVICE_URL}/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // Request up to 3 sources from the embedding service
-        body: JSON.stringify({ query, doc_id: documentId, top_k: 3 }), 
-      });
+  //     const searchRes = await fetch(`${EMBEDDING_SERVICE_URL}/search`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       // Request up to 3 sources from the embedding service
+  //       body: JSON.stringify({ query, doc_id: documentId, top_k: 3 }), 
+  //     });
 
-      if (!searchRes.ok) throw new Error(`Embedding service responded with ${searchRes.status}`);
+  //     if (!searchRes.ok) throw new Error(`Embedding service responded with ${searchRes.status}`);
       
-      const searchData = await searchRes.json();
-      const sources: RagSource[] = searchData.results || [];
+  //     const searchData = await searchRes.json();
+  //     const sources: RagSource[] = searchData.results || [];
 
-      if (sources.length === 0) {
-        return res.json({ 
-          response: "I couldn't find any relevant information in the document for that question. Please try rephrasing.",
-          sources: [] 
-        });
-      }
+  //     if (sources.length === 0) {
+  //       return res.json({ 
+  //         response: "I couldn't find any relevant information in the document for that question. Please try rephrasing.",
+  //         sources: [] 
+  //       });
+  //     }
 
-      // --- Generate a more sophisticated response ---
-      const pageNumbers = sources.map((s) => s.page_num).sort((a, b) => a - b);
-      const uniquePageNumbers = Array.from(new Set(pageNumbers));
+  //     // --- Generate a more sophisticated response ---
+  //     const pageNumbers = sources.map((s) => s.page_num).sort((a, b) => a - b);
+  //     const uniquePageNumbers = Array.from(new Set(pageNumbers));
       
-      // Combine context from sources for a better summary
-      const combinedContext = sources.map((s) => s.text).join("\n\n---\n\n");
+  //     // Combine context from sources for a better summary
+  //     const combinedContext = sources.map((s) => s.text).join("\n\n---\n\n");
 
-      // This is a placeholder for a real LLM call. In a real system, you would send
-      // the `query` and `combinedContext` to an LLM (like GPT) to get a natural language answer.
-      // For now, we'll create a structured response based on the retrieved context.
-      // const botResponse = `Based on information from page(s) ${uniquePageNumbers.join(', ')}, here's what I found:\n\n- "${sources[0].text.substring(0, 150)}..."`;
+  //     // This is a placeholder for a real LLM call. In a real system, you would send
+  //     // the `query` and `combinedContext` to an LLM (like GPT) to get a natural language answer.
+  //     // For now, we'll create a structured response based on the retrieved context.
+  //     // const botResponse = `Based on information from page(s) ${uniquePageNumbers.join(', ')}, here's what I found:\n\n- "${sources[0].text.substring(0, 150)}..."`;
 
-      const context = sources.map((s) => s.text).join("\n\n---\n\n");
+  //     const context = sources.map((s) => s.text).join("\n\n---\n\n");
 
-      console.log("[RAG] Sending context to LLM for answer generation.");
-      const answerRes = await fetch(`${EMBEDDING_SERVICE_URL}/generate_answer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, context }),
-      });
+  //     console.log("[RAG] Sending context to LLM for answer generation.");
+  //     const answerRes = await fetch(`${EMBEDDING_SERVICE_URL}/generate_answer`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ query, context }),
+  //     });
 
-      if (!answerRes.ok) throw new Error(`LLM generation service responded with ${answerRes.status}`);
+  //     if (!answerRes.ok) throw new Error(`LLM generation service responded with ${answerRes.status}`);
       
-      const answerData = await answerRes.json();
-      const botResponse = answerData.answer;
+  //     const answerData = await answerRes.json();
+  //     const botResponse = answerData.answer;
 
-      return res.json({
-        response: botResponse,
-        sources: sources.map((s) => ({
-          doc_id: s.doc_id,
-          page_num: s.page_num,
-          score: s.score,
-          keyword: s.keyword,
-        })),
-      });
+  //     return res.json({
+  //       response: botResponse,
+  //       sources: sources.map((s) => ({
+  //         doc_id: s.doc_id,
+  //         page_num: s.page_num,
+  //         score: s.score,
+  //         keyword: s.keyword,
+  //       })),
+  //     });
 
-    } catch (error) {
-      console.error("[RAG] Chat endpoint failed:", error);
-      res.status(500).json({ 
-        error: "Failed to get a response. The RAG service may be down.",
-        response: "I'm having trouble connecting to my knowledge base. Please ensure the embedding service is running and try again.",
-        sources: []
-      });
-    }
-  });
+  //   } catch (error) {
+  //     console.error("[RAG] Chat endpoint failed:", error);
+  //     res.status(500).json({ 
+  //       error: "Failed to get a response. The RAG service may be down.",
+  //       response: "I'm having trouble connecting to my knowledge base. Please ensure the embedding service is running and try again.",
+  //       sources: []
+  //     });
+  //   }
+  // });
+
+  // app.post("/api/documents/:id/chat-stream", async (req, res) => {
+  //   try {
+  //     const documentId = parseInt(req.params.id);
+  //     const { query } = req.body;
+  //     if (!query) return res.status(400).json({ error: "Query is required" });
+
+  //     // Step 1: Get sources (same as before)
+  //     const searchRes = await fetch(`${EMBEDDING_SERVICE_URL}/search`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ query, doc_id: documentId, top_k: 3 }),
+  //     });
+  //     if (!searchRes.ok) throw new Error(`Embedding service responded with ${searchRes.status}`);
+  //     const searchData = await searchRes.json();
+  //     const sources: RagSource[] = searchData.results || [];
+  //     const context = sources.map((s) => s.text).join("\n\n---\n\n");
+
+  //     // Set headers for Server-Sent Events
+  //     res.setHeader('Content-Type', 'text/event-stream');
+  //     res.setHeader('Cache-Control', 'no-cache');
+  //     res.setHeader('Connection', 'keep-alive');
+  //     res.flushHeaders(); // Flush the headers to establish the connection
+
+  //     // Step 2: Immediately send the sources to the client as the first event
+  //     const sourcePayload = sources.map((s) => ({
+  //       doc_id: s.doc_id,
+  //       page_num: s.page_num,
+  //       score: s.score,
+  //       keyword: s.keyword,
+  //     }));
+  //     res.write(`data: ${JSON.stringify({ sources: sourcePayload })}\n\n`);
+
+  //     // If no sources, we can still ask the LLM, it will likely say it can't answer.
+  //     // Now, start the stream from the Python service.
+      
+  //     // Step 3: Call the new Python streaming endpoint and pipe the response
+  //     const streamRes = await fetch(`${EMBEDDING_SERVICE_URL}/stream_answer`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ query, context }),
+  //     });
+
+  //     if (!streamRes.body) {
+  //       throw new Error("The response from the streaming service has no body.");
+  //     }
+
+  //     // Pipe the stream from Python directly to the client
+  //     const reader = streamRes.body.getReader();
+  //     while (true) {
+  //       const { done, value } = await reader.read();
+  //       if (done) break;
+  //       // `value` is a Uint8Array
+  //       res.write(value);
+  //     }
+      
+  //     res.end(); // End the response when the stream is finished
+
+  //   } catch (error) {
+  //     console.error("[RAG Stream] Chat endpoint failed:", error);
+  //     // If an error occurs, try to send a final error event before closing
+  //     res.write(`data: ${JSON.stringify({ error: "An internal error occurred." })}\n\n`);
+  //     res.end();
+  //   }
+  // });
 
   app.post("/api/documents/:id/chat-stream", async (req, res) => {
     try {
@@ -294,62 +359,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { query } = req.body;
       if (!query) return res.status(400).json({ error: "Query is required" });
 
-      // Step 1: Get sources (same as before)
-      const searchRes = await fetch(`${EMBEDDING_SERVICE_URL}/search`, {
+      console.log(`[PROXY] Streaming chat for doc ${documentId}`);
+
+      const pythonServiceRes = await fetch(`${EMBEDDING_SERVICE_URL}/chat-stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, doc_id: documentId, top_k: 3 }),
       });
-      if (!searchRes.ok) throw new Error(`Embedding service responded with ${searchRes.status}`);
-      const searchData = await searchRes.json();
-      const sources: RagSource[] = searchData.results || [];
-      const context = sources.map((s) => s.text).join("\n\n---\n\n");
+
+      if (!pythonServiceRes.ok) {
+        throw new Error(`Python service failed with status ${pythonServiceRes.status}`);
+      }
+      if (!pythonServiceRes.body) {
+        throw new Error("Python service response has no body");
+      }
 
       // Set headers for Server-Sent Events
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
-      res.flushHeaders(); // Flush the headers to establish the connection
+      res.flushHeaders();
 
-      // Step 2: Immediately send the sources to the client as the first event
-      const sourcePayload = sources.map((s) => ({
-        doc_id: s.doc_id,
-        page_num: s.page_num,
-        score: s.score,
-        keyword: s.keyword,
-      }));
-      res.write(`data: ${JSON.stringify({ sources: sourcePayload })}\n\n`);
-
-      // If no sources, we can still ask the LLM, it will likely say it can't answer.
-      // Now, start the stream from the Python service.
-      
-      // Step 3: Call the new Python streaming endpoint and pipe the response
-      const streamRes = await fetch(`${EMBEDDING_SERVICE_URL}/stream_answer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, context }),
-      });
-
-      if (!streamRes.body) {
-        throw new Error("The response from the streaming service has no body.");
-      }
-
-      // Pipe the stream from Python directly to the client
-      const reader = streamRes.body.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        // `value` is a Uint8Array
-        res.write(value);
-      }
-      
-      res.end(); // End the response when the stream is finished
+      // Pipe the stream from the Python service directly to the client
+      // @ts-ignore - node-fetch body is compatible with Express response pipe
+      pythonServiceRes.body.pipe(res);
 
     } catch (error) {
-      console.error("[RAG Stream] Chat endpoint failed:", error);
-      // If an error occurs, try to send a final error event before closing
-      res.write(`data: ${JSON.stringify({ error: "An internal error occurred." })}\n\n`);
-      res.end();
+      console.error("[PROXY] Chat stream failed:", error);
+      // Try to send a final error event if headers haven't been sent
+      if (!res.headersSent) {
+          res.status(500).json({ error: "Failed to connect to the agentic service." });
+      } else {
+          res.write(`data: ${JSON.stringify({ error: "An internal error occurred." })}\n\n`);
+          res.end();
+      }
     }
   });
 
