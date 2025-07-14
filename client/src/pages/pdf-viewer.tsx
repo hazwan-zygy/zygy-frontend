@@ -20,7 +20,8 @@ import {
   FileText,
   Download,
   Trash2,
-  SquareDashedMousePointer
+  SquareDashedMousePointer,
+  LogOut
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { PDFViewer } from "@/components/pdf-viewer";
@@ -28,6 +29,7 @@ import { SearchInterface } from "@/components/search-interface";
 import { ChatInterface } from "@/components/chat-interface";
 import { MobileSearchOverlay } from "@/components/mobile-search-overlay";
 import { useLocation } from "wouter";
+import { useAuth0 } from "@auth0/auth0-react";
 
 interface PdfDocument {
   id: number;
@@ -64,7 +66,8 @@ export default function PDFViewerPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-
+  const { logout } = useAuth0();
+  
   // Match the route for deep linking
   const [, params] = useRoute("/documents/:docId/page/:pageNum");
 
@@ -272,21 +275,39 @@ export default function PDFViewerPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <img src="/whale.svg" alt="Whale logo" className="w-10 h-10" />
+              <img src="/atom.svg" alt="Zygy logo" className="w-10 h-10" />
               <h1 className="text-xl font-semibold text-gray-900">Zygy Demo</h1>
             </div>
             
-            {/* Mobile search toggle */}
-            {isMobile && (
+            <div className="flex items-center gap-1">
+              {/* Mobile search toggle */}
+              {isMobile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowMobileSearch(true)}
+                  className="lg:hidden"
+                >
+                  <Search size={20} />
+                </Button>
+              )}
+
+              {/* Logout button (always visible) */}
               <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowMobileSearch(true)}
-                className="lg:hidden"
+                variant="outline"
+                onClick={() =>
+                  logout({ logoutParams: { returnTo: window.location.origin } })
+                }
+                aria-label="Log out"
+                className="group relative h-11 px-4 border-slate-200 hover:border-red-200 bg-white/70 backdrop-blur-sm hover:bg-red-50 text-slate-700 hover:text-red-700 font-medium transition-all duration-200 ease-in-out transform hover:scale-[1.02] shadow-lg shadow-slate-200/50 hover:shadow-red-200/50"
               >
-                <Search size={20} />
+                <span className="mr-2">Sign Out</span>
+                <LogOut className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                
+                {/* Subtle gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 to-red-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
               </Button>
-            )}
+            </div>
           </div>
         </div>
       </header>
@@ -297,40 +318,55 @@ export default function PDFViewerPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 flex-1 min-h-0">
           
           {/* PDF Viewer */}
-          <div className="lg:col-span-3 h-full">
-            <Card className="h-full flex flex-col bg-zinc-700">
-              <CardHeader className="pb-6">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg text-white">PDF Document</CardTitle>
-                  <div className="flex items-center space-x-2">
-                    {selectedDocument && (
-                      <>
-                        <span className="text-sm text-gray-50 text-white pr-4">
-                          Page {currentPage} of {selectedDocument.totalPages}
-                        </span>
-                        <div className="flex items-center space-x-1">
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage <= 1}
-                          >
-                            <ChevronLeft size={16} />
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            onClick={() => setCurrentPage(prev => Math.min(selectedDocument.totalPages, prev + 1))}
-                            disabled={currentPage >= selectedDocument.totalPages}
-                          >
-                            <ChevronRight size={16} />
-                          </Button>
-                        </div>
-                      </>
-                    )}
+    <div className="lg:col-span-3 h-full">
+      <Card className="h-full flex flex-col border-0 shadow-xl shadow-slate-200/50 bg-slate-900/70 backdrop-blur-sm">
+        <CardHeader className="pb-6 bg-gradient-to-r from-slate-700/80 to-slate-800/80 backdrop-blur-sm border-b border-slate-200/50 rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <CardTitle className="text-lg font-semibold text-white">
+                PDF Document
+              </CardTitle>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              {selectedDocument && (
+                <>
+                  <div className="flex items-center space-x-2 px-4 py-2 bg-slate-600/60 backdrop-blur-sm rounded-lg border border-slate-600/30 shadow-lg shadow-black/10">
+                    <span className="text-sm font-medium text-slate-100">
+                      Page {currentPage} of {selectedDocument.totalPages}
+                    </span>
                   </div>
-                </div>
-              </CardHeader>
+                  
+                  <div className="flex items-center bg-slate-700/60 backdrop-blur-sm rounded-lg border border-slate-600/30 shadow-lg shadow-black/10 p-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage <= 1}
+                      className="h-8 w-8 hover:bg-slate-500/70 text-slate-300 hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-300"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <div className="w-px h-5 bg-slate-600/50 mx-1"></div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setCurrentPage(prev => Math.min(selectedDocument.totalPages, prev + 1))}
+                      disabled={currentPage >= selectedDocument.totalPages}
+                      className="h-8 w-8 hover:bg-slate-500/70 text-slate-300 hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-slate-300"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+
               <CardContent className="flex-1 p-0">
                 <PDFViewer
                   document={selectedDocument}
