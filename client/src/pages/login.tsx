@@ -1,4 +1,4 @@
-import { useSearchParams } from "wouter";
+import { useSearch } from "wouter";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,9 @@ import { LogIn, UserPlus, Sparkles, Atom } from "lucide-react";
 
 export default function LoginPage() {
   const { loginWithRedirect, isAuthenticated } = useAuth0();
-  const [location] = useSearchParams();
-  const returnTo = location.get("returnTo") ?? "/";
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const returnTo = params.get("returnTo") ?? "/";
 
   if (isAuthenticated) {
     window.location.replace(returnTo);
