@@ -32,6 +32,7 @@ interface PdfDocument {
   totalPages: number;
   textContent?: string;
   uploadedAt: string;
+  docType?: 'pdf' | 'excel';
 }
 
 interface SearchResult {

@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+export const docTypeEnum = pgEnum('doc_type_enum', ['pdf', 'excel']);
 
 export const pdfDocuments = pgTable("pdf_documents", {
   id: serial("id").primaryKey(),
@@ -10,6 +11,7 @@ export const pdfDocuments = pgTable("pdf_documents", {
   totalPages: integer("total_pages").notNull(),
   textContent: text("text_content"),
   uploadedAt: text("uploaded_at").notNull(),
+  docType: docTypeEnum('doc_type').notNull().default('pdf'),
 });
 
 export const searchResults = pgTable("search_results", {

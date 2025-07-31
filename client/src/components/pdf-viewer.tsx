@@ -12,6 +12,7 @@ interface PdfDocument {
   totalPages: number;
   textContent?: string;
   uploadedAt: string;
+  docType?: 'pdf' | 'excel';
 }
 
 interface SearchResult {
@@ -217,7 +218,7 @@ export function PDFViewer({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept="application/pdf,.xlsx,.xls"
                 onChange={handleInputChange}
                 className="hidden"
               />
@@ -226,6 +227,26 @@ export function PDFViewer({
         </div>
       </div>
     );
+  }
+
+  const isExcelFile = document?.docType === 'excel';
+  console.log("isExcelFile", isExcelFile)
+  if (isExcelFile) {
+      return (
+        <div className="h-full flex items-center justify-center p-8 bg-gray-50">
+          <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="text-green-600" size={32} />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Excel Document Loaded
+              </h3>
+              <p className="text-gray-500 max-w-sm">
+                <span className="font-semibold">{document.originalName}</span> is ready for analysis. You can start asking questions about its content in the chat assistant.
+              </p>
+          </div>
+        </div>
+      );
   }
 
   const fileUrl = `/api/documents/${document.id}/file`;

@@ -34,6 +34,7 @@ interface PdfDocument {
   totalPages: number;
   textContent?: string;
   uploadedAt: string;
+  docType?: 'pdf' | 'excel';
 }
 
 interface SearchResult {
@@ -66,7 +67,7 @@ interface SearchInterfaceProps {
   onDeleteDocument: (id: number) => void;
   isSearching: boolean;
   highlightedPage: number | null;
-  onChunkSelect: (page: number) => void;
+  onChunkSelect: (page: number, keyword?: string, shouldHighlight?: boolean) => void;
   isDeleting: boolean;
 }
 
@@ -247,7 +248,7 @@ export function SearchInterface({
                         key={page}
                         variant={highlightedPage === page ? "default" : "secondary"}
                         size="sm"
-                        onClick={() => onChunkSelect(page)}
+                        onClick={() => onChunkSelect(page, undefined, true)}
                         className="h-8 shrink-0 px-3"
                       >
                         Page {page}

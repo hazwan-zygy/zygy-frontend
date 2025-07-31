@@ -26,6 +26,15 @@ interface RagSource {
   keyword?: string;
 }
 
+interface ExcelSheetContent {
+  page_num: number;
+  text: string;
+}
+
+interface ExcelConversionResponse {
+  pages: ExcelSheetContent[];
+}
+
 // --- RAG Integration Helpers ---
 const EMBEDDING_SERVICE_URL = "https://demo.zygy.com/api";
 
@@ -76,10 +85,14 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === "application/pdf") {
+    if (
+      file.mimetype === "application/pdf" ||
+      file.mimetype === "application/vnd.ms-excel" || // for .xls
+      file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" // for .xlsx
+    ) {
       cb(null, true);
     } else {
-      cb(new Error("Only PDF files are allowed"));
+      cb(new Error("Only PDF or Excel files are allowed"));
     }
   },
 });
@@ -155,26 +168,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: "No file uploaded" });
         }
         const file = req.file;
-        const uploadsDir = path.resolve(process.cwd(), "uploads");
-        await fs.promises.mkdir(uploadsDir, { recursive: true });
-        const storedFilename = `${Date.now()}-${file.originalname}`;
-        const filePath = path.join(uploadsDir, storedFilename);
-        await fs.promises.writeFile(filePath, file.buffer);
+        // --- This is the new logic block ---
+        let pagesPayload: { doc_id: number; page_num: number; text: string }[] = [];
+        const isExcel = file.mimetype.includes('excel') || file.mimetype.includes('spreadsheetml');
         
-        const parsed = await pdfParse(file.buffer);
+        // First, create the document record in our local DB to get an ID
+        // We don't know the page count for excel yet, so we'll use a placeholder
+        const parsedForMeta = !isExcel ? await pdfParse(file.buffer) : { numpages: 1, text: '' };
         const documentData = {
-          filename: storedFilename,
+          filename: `${Date.now()}-${file.originalname}`,
           originalName: file.originalname,
           fileSize: file.size,
-          totalPages: parsed.numpages,
-          textContent: parsed.text,
+          totalPages: parsedForMeta.numpages,
+          textContent: parsedForMeta.text,
+          // We should add a document type for the frontend
+          docType: isExcel ? 'excel' : 'pdf',
         };
         const validatedData = insertPdfDocumentSchema.parse(documentData);
         const document = await storage.createPdfDocument(validatedData);
+        // --- End of new logic block preamble ---
+        
+        if (isExcel) {
+          // --- EXCEL FLOW ---
+          console.log(`[Excel Flow] Processing ${file.originalname}`);
+          // 1. Proxy the file to the Python /convert-xlsx endpoint
+          const formData = new FormData();
+          const blob = new Blob([file.buffer], { type: file.mimetype });
+          formData.append('file', blob, file.originalname);
 
-        // Asynchronously index the document in the Python service.
-        // We don't await this, so the UI responds faster.
-        indexDocumentInPythonService(document.id, file.buffer);
+          const convertRes = await fetch(`${EMBEDDING_SERVICE_URL}/convert-xlsx`, {
+              method: "POST",
+              body: formData,
+          });
+          if (!convertRes.ok) {
+              throw new Error(`Excel conversion failed: ${await convertRes.text()}`);
+          }
+          const conversionData = (await convertRes.json()) as ExcelConversionResponse;
+          
+          // 2. Shape the response for the final indexing step
+          pagesPayload = conversionData.pages.map((sheet) => ({
+            doc_id: document.id,
+            page_num: sheet.page_num,
+            text: sheet.text,
+          }));
+
+        } else {
+          // --- PDF FLOW (existing logic) ---
+          console.log(`[PDF Flow] Processing ${file.originalname}`);
+          const pdfData = new Uint8Array(file.buffer);
+          const pdf = await pdfjs.getDocument(pdfData).promise;
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map((item: any) => item.str).join(" ");
+            
+            if (pageText.trim().length > 20) {
+              pagesPayload.push({ doc_id: document.id, page_num: i, text: pageText });
+            }
+          }
+        }
+        
+        // --- CONVERGENCE POINT ---
+        // Both flows produce `pagesPayload`. Now we send it for indexing.
+        if (pagesPayload.length > 0) {
+          console.log(`[RAG] Indexing ${pagesPayload.length} pages/sheets for doc ${document.id}`);
+          // This is an async call, we don't wait for it.
+          fetch(`${EMBEDDING_SERVICE_URL}/index_pages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pages: pagesPayload }),
+          }).catch(err => console.error(`[RAG] Background indexing failed: ${err}`));
+        }
+        
+        // Save the physical file (unchanged from before)
+        const uploadsDir = path.resolve(process.cwd(), "uploads");
+        await fs.promises.mkdir(uploadsDir, { recursive: true });
+        const filePath = path.join(uploadsDir, document.filename);
+        await fs.promises.writeFile(filePath, file.buffer);
 
         res.json(document);
       } catch (error) {

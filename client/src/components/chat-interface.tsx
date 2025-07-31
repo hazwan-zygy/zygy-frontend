@@ -26,7 +26,7 @@ interface ChatMessage {
 
 interface ChatInterfaceProps {
   selectedDocument?: { id: number; originalName: string } | null;
-  onSourceClick?: (page: number, keyword?: string) => void;
+  onSourceClick?: (page: number, keyword?: string, ouldHighlight?: boolean) => void;
   highlightedPage?: number | null;
   onClearHighlight?: () => void;
 }
@@ -240,7 +240,7 @@ export function ChatInterface({ selectedDocument, onSourceClick, highlightedPage
                                 variant="outline" 
                                 size="sm" 
                                 className="h-auto px-2 py-1 text-xs text-blue-600 border-blue-200 hover:bg-blue-50" 
-                                onClick={() => onSourceClick && onSourceClick(source.page_num, source.keyword || "")}
+                                onClick={() => onSourceClick && onSourceClick(source.page_num, source.keyword || "", true)}
                               >
                                 <BookOpen size={12} className="mr-1.5" />
                                 Page {source.page_num} 

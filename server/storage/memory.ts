@@ -35,6 +35,7 @@ export class MemStorage implements IStorage {
       totalPages: insertDocument.totalPages,
       textContent: insertDocument.textContent || null,
       uploadedAt: new Date().toISOString(),
+      docType: insertDocument.docType || 'pdf', 
     };
     this.pdfDocuments.set(id, document);
     return document;

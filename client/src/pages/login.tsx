@@ -22,7 +22,7 @@ export default function LoginPage() {
     });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-200 via-slate-50 to-slate-300 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -43,7 +43,7 @@ export default function LoginPage() {
         </div>
 
         {/* Main Card */}
-        <Card className="border-0 shadow-xl shadow-slate-200/50 bg-white/70 backdrop-blur-sm">
+        <Card className="border-0 shadow-2xl shadow-slate-400/80 bg-white/70 backdrop-blur-sm">
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl font-semibold text-center text-slate-800">
               Get Started
