@@ -36,49 +36,49 @@ export default function ApplicationPage() {
       title: "Operation and maintenance contract management",
       icon: Settings,
       description: "Manage operational contracts and maintenance schedules",
-      link: "/documents/1"
+      link: "https://app1.demo.zygy.com"
     },
     {
       id: 2,
       title: "Centralized intelligence and incident tracking",
       icon: Target,
       description: "Track incidents and analyze intelligence data centrally",
-      link: "/documents/2"
+      link: "https://app1.demo.zygy.com"
     },
     {
       id: 3,
       title: "Legal document classification and reporting",
       icon: Scale,
       description: "Classify legal documents and generate reports",
-      link: "/documents/3"
+      link: "https://app1.demo.zygy.com"
     },
     {
       id: 4,
       title: "Task generation and identity verification in credit applications",
       icon: CheckCircle,
       description: "Generate tasks and verify identity for credit processing",
-      link: "/documents/4"
+      link: "https://app1.demo.zygy.com"
     },
     {
       id: 5,
       title: "Document processing, schedule tracking, and certificate submission",
       icon: FileText,
       description: "Process documents, track and manage certificates",
-      link: "/documents/5"
+      link: "https://app1.demo.zygy.com"
     },
     {
       id: 6,
       title: "Knowledge management",
       icon: Lightbulb,
       description: "Organize and manage organizational knowledge base",
-      link: "/documents/6"
+      link: "https://app1.demo.zygy.com"
     },
     {
       id: 7,
       title: "Government data crawling and policy tracking",
       icon: Building,
       description: "Crawl government data and track policy changes",
-      link: "/documents/7"
+      link: "https://app3.demo.zygy.com"
     }
   ];
 
