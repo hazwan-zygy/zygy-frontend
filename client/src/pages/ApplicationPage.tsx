@@ -170,13 +170,13 @@ export default function ApplicationPage() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="relative">
-                  <img src="zygy-logo-dark.png" alt="Logo" width="250" height="80"></img>
+                  <img src="zygy-logo-dark.png" alt="Logo" width="125" height="40"></img>
                   {/* <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
                     <Atom className="w-4 h-4 text-white" />
                   </div>
                   <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-full animate-pulse"></div> */}
                 </div>
-                <span className="text-xl font-bold text-white">Zygy</span>
+                {/* <span className="text-xl font-bold text-white">Zygy</span> */}
               </div>
               <nav className="ml-8">
                 <div className="flex items-center space-x-1">
