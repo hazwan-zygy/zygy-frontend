@@ -114,15 +114,15 @@ export default function ApplicationPage() {
           documentLink: "https://example.com/esg-assessment-docs", // Edit this URL
           hideStudyNote: true // Set to true to hide "Please study..." note
         },
-        {
-          id: 9,
-          title: "Loan Assessment with AI",
-          icon: DollarSign,
-          description: "Use AI to perform loan assessments in accordance with the Loan Onboarding Guidelines",
-          link: "https://app3.demo.zygy.com/web?title=Loan&serviceAccount=demo",
-          documentLink: "https://example.com/loan-assessment-docs", // Edit this URL
-          hideStudyNote: true // Set to true to hide "Please study..." note
-        }
+        // {
+        //   id: 9,
+        //   title: "Loan Assessment with AI",
+        //   icon: DollarSign,
+        //   description: "Use AI to perform loan assessments in accordance with the Loan Onboarding Guidelines",
+        //   link: "https://app3.demo.zygy.com/web?title=Loan&serviceAccount=demo",
+        //   documentLink: "https://example.com/loan-assessment-docs", // Edit this URL
+        //   hideStudyNote: true // Set to true to hide "Please study..." note
+        // }
       ]
     }
   ];
