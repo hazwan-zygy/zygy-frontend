@@ -15,21 +15,24 @@ import {
   ChevronRight, 
   ChevronsLeft, 
   ChevronsRight,
-  Info,
   Mail,
   Bell,
   User,
   Atom,
   LogOut,
-  Users
+  Users,
+  BookOpen,
+  Truck,
+  MapPin,
+  Wrench,
+  Leaf,
+  DollarSign
 } from "lucide-react";
-import { useAuth0 } from "@auth0/auth0-react";
 
 export default function ApplicationPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
-  const { logout } = useAuth0();
 
   const applicationCategories = [
     {
@@ -37,24 +40,27 @@ export default function ApplicationPage() {
       applications: [
         {
           id: 1,
-          title: "Operation and maintenance contract management",
-          icon: Settings,
-          description: "Manage operational contracts and maintenance schedules",
-          link: "https://app1.demo.zygy.com"
+          title: "Discover key information on Government Circular",
+          icon: Building,
+          description: "Identify and interpret key information from government Pekeliling with AI",
+          link: "https://app1.demo.zygy.com/web?title=Government%20Circular&serviceAccount=demo",
+          documentLink: "https://example.com/government-circular-docs" // Edit this URL
         },
         {
           id: 2,
-          title: "Centralized intelligence and incident tracking",
-          icon: Users,
-          description: "Track incidents and analyze intelligence data centrally",
-          link: "https://app1.demo.zygy.com"
+          title: "Discover related hadiths with AI",
+          icon: BookOpen,
+          description: "Use AI to identify and retrieve related hadiths based on specific topics or keywords",
+          link: "https://app1.demo.zygy.com/web?title=Hadiths&serviceAccount=demo",
+          documentLink: "https://example.com/hadiths-docs" // Edit this URL
         },
         {
           id: 3,
-          title: "Legal document classification and reporting",
+          title: "Discover Key Information in Legal Act",
           icon: Scale,
-          description: "Classify legal documents and generate reports",
-          link: "https://app1.demo.zygy.com"
+          description: "Use AI to extract and summarize key information from legal acts",
+          link: "https://app1.demo.zygy.com/web?title=Legal%20Act&serviceAccount=demo",
+          documentLink: "https://example.com/legal-act-docs" // Edit this URL
         }
       ]
     },
@@ -63,40 +69,59 @@ export default function ApplicationPage() {
       applications: [
         {
           id: 4,
-          title: "Document processing, schedule tracking, and certificate submission",
+          title: "Contract Operations with AI",
           icon: FileText,
-          description: "Process documents, track schedules and manage certificates",
-          link: "https://app1.demo.zygy.com"
+          description: "Use AI to analyze and diagnose contract operation issues by cross-referencing contract details (PDF format) with transaction records (Excel format)",
+          link: "https://app1.demo.zygy.com/web?title=Contract&serviceAccount=demo",
+          documentLink: "https://example.com/contract-operations-docs" // Edit this URL
+        },
+        {
+          id: 5,
+          title: "Shipping Logistics with AI",
+          icon: Truck,
+          description: "Use AI to analyze and diagnose issues in shipping logistics by examining transaction data stored in the database",
+          link: "https://app1.demo.zygy.com/web?title=Shipping&serviceAccount=demo",
+          documentLink: "https://example.com/shipping-logistics-docs" // Edit this URL
+        },
+        {
+          id: 6,
+          title: "Geospatial (Map) Intelligence with AI",
+          icon: MapPin,
+          description: "Use AI to analyze and diagnose issues by integrating geospatial data with database records",
+          link: "https://app1.demo.zygy.com/web?title=Geospatial&serviceAccount=demo",
+          documentLink: "https://example.com/geospatial-docs" // Edit this URL
+        },
+        {
+          id: 7,
+          title: "Workshop Operations with AI",
+          icon: Wrench,
+          description: "Use AI to analyze and diagnose issues in workshop operation by examining transaction data stored in the database",
+          link: "https://app1.demo.zygy.com/web?title=Workshop&serviceAccount=demo",
+          documentLink: "https://example.com/workshop-operations-docs" // Edit this URL
         }
       ]
     },
     {
-      title: "Planning",
+      title: "Planning & Solving",
       applications: [
         {
-          id: 5,
-          title: "Task generation and identity verification in credit applications",
-          icon: CheckCircle,
-          description: "Generate tasks and verify identity for credit processing",
-          link: "https://app1.demo.zygy.com"
+          id: 8,
+          title: "ESG Assessment with AI",
+          icon: Leaf,
+          description: "Use AI to perform ESG assessments based on company sustainability reports and automatically populate the ESG sections of loan application forms",
+          link: "https://app3.demo.zygy.com/web?title=ESG&serviceAccount=demo",
+          documentLink: "https://example.com/esg-assessment-docs" // Edit this URL
         },
         {
-          id: 6,
-          title: "Knowledge management",
-          icon: Lightbulb,
-          description: "Organize and manage organizational knowledge base",
-          link: "https://app1.demo.zygy.com"
-        },
-        {
-          id: 7,
-          title: "Government data crawling and policy tracking",
-          icon: Building,
-          description: "Crawl government data and track policy changes",
-          link: "https://app3.demo.zygy.com"
+          id: 9,
+          title: "Loan Assessment with AI",
+          icon: DollarSign,
+          description: "Use AI to perform loan assessments in accordance with the Loan Onboarding Guidelines",
+          link: "https://app3.demo.zygy.com/web?title=Loan&serviceAccount=demo",
+          documentLink: "https://example.com/loan-assessment-docs" // Edit this URL
         }
       ]
-    },
-
+    }
   ];
 
   // Flatten all applications for search and pagination
@@ -124,13 +149,6 @@ export default function ApplicationPage() {
     return (
       <Card key={app.id} className="relative group shadow-md hover:shadow-xl transition-all duration-300 bg-white/70 backdrop-blur-sm border-slate-200/50 hover:border-blue-200">
         <CardContent className="p-6">
-          {/* Info icon */}
-          <div className="absolute top-4 right-4">
-            <div className="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-              <Info className="w-3 h-3 text-slate-500 group-hover:text-blue-600" />
-            </div>
-          </div>
-
           {/* Icon */}
           <div className="mb-4">
             <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center group-hover:from-blue-50 group-hover:to-blue-100 transition-all duration-300">
@@ -143,8 +161,19 @@ export default function ApplicationPage() {
             <h3 className="text-sm font-semibold text-slate-900 mb-2 leading-tight">
               {app.title}
             </h3>
-            <p className="text-xs text-slate-600 line-clamp-2">
+            <p className="text-xs text-slate-600 mb-3">
               {app.description}
+            </p>
+            <p className="text-xs text-slate-500 italic">
+              Please study{" "}
+              <a 
+                href={app.documentLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                ingested documents
+              </a>
             </p>
           </div>
 
@@ -172,12 +201,7 @@ export default function ApplicationPage() {
               <div className="flex items-center space-x-2">
                 <div className="relative">
                   <img src="zygy-logo-light.png" alt="Logo" width="125" height="40"></img>
-                  {/* <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                    <Atom className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-full animate-pulse"></div> */}
                 </div>
-                {/* <span className="text-xl font-bold text-white">Zygy</span> */}
               </div>
               <nav className="ml-8">
                 <div className="flex items-center space-x-1">
@@ -187,50 +211,25 @@ export default function ApplicationPage() {
                 </div>
               </nav>
             </div>
-
-            {/* Right side icons */}
-            {/* <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm" className="text-slate-200 hover:text-slate-900">
-                <Mail className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-slate-200 hover:text-slate-900">
-                <Bell className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-slate-200 hover:text-slate-900">
-                <User className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  logout({ logoutParams: { returnTo: window.location.origin } })
-                }
-                aria-label="Log out"
-                className="group relative h-11 px-4 border-slate-200 hover:border-red-200 bg-white/70 backdrop-blur-sm hover:bg-red-50 text-slate-700 hover:text-red-700 font-medium transition-all duration-200 ease-in-out transform hover:scale-[1.02] shadow-lg shadow-slate-200/50 hover:shadow-red-200/50"
-              >
-                <span className="mr-2">Sign Out</span>
-                <LogOut className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 to-red-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-              </Button>
-            </div> */}
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Choose Application Demo via Case Study
-          </h1>
-          <p className="text-slate-600">
-            Select from our available application demonstrations to explore different use cases
-          </p>
-        </div>
-
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative max-w-md">
+        {/* Page Header with Search */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+              Choose Application Demo via Case Study
+            </h1>
+            <p className="text-slate-600">
+              Select from our available application demonstrations to explore different use cases
+            </p>
+          </div>
+          
+          {/* Search Bar */}
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
             <Input
               placeholder="Search applications..."
@@ -239,10 +238,12 @@ export default function ApplicationPage() {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1); // Reset to first page when searching
               }}
-              className="pl-10 bg-white/70 backdrop-blur-sm border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+              className="pl-10 w-80 bg-white/70 backdrop-blur-sm border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
             />
           </div>
         </div>
+
+
 
         {/* Applications by Category or Search Results */}
         {searchQuery ? (
