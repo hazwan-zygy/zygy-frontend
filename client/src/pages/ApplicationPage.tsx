@@ -186,7 +186,7 @@ export default function ApplicationPage() {
           <Button 
             className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-red-600 hover:to-red-700 text-white font-medium shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all duration-200 transform hover:scale-[1.02]"
             size="sm"
-            onClick={() => window.location.href = app.link}
+            onClick={() => window.open(app.link, '_blank')}
           >
             Access This Demo
           </Button>
@@ -231,7 +231,7 @@ export default function ApplicationPage() {
             <p className="text-slate-600">
               Select from our available application demonstrations to explore different use cases
             </p>
-            <p className="text-blue-600 mt-2"><a href="https://forms.gle/r7ZVPzqCuqLbtNLE9" target="_blank">Survey Link</a></p>
+            <p className="text-blue-600 mt-2"><a href="https://forms.gle/r7ZVPzqCuqLbtNLE9" target="_blank">Please fill in our Survey, it will help to serve you better</a></p>
           </div>
           
           {/* Search Bar */}
