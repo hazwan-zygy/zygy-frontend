@@ -89,7 +89,8 @@ export default function ApplicationPage() {
           icon: MapPin,
           description: "Use AI to analyze and diagnose issues by integrating geospatial data with database records",
           link: "https://app3.demo.zygy.com",
-          documentLink: "https://example.com/geospatial-docs" // Edit this URL
+          documentLink: "https://example.com/geospatial-docs", // Edit this URL
+          hideStudyNote: true
         },
         {
           id: 7,
