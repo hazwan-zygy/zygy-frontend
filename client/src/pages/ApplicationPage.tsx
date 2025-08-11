@@ -59,24 +59,36 @@ export default function ApplicationPage() {
       ]
     },
     {
-      title: "Planning",
+      title: "Operation",
       applications: [
         {
           id: 4,
+          title: "Document processing, schedule tracking, and certificate submission",
+          icon: FileText,
+          description: "Process documents, track schedules and manage certificates",
+          link: "https://app1.demo.zygy.com"
+        }
+      ]
+    },
+    {
+      title: "Planning",
+      applications: [
+        {
+          id: 5,
           title: "Task generation and identity verification in credit applications",
           icon: CheckCircle,
           description: "Generate tasks and verify identity for credit processing",
           link: "https://app1.demo.zygy.com"
         },
         {
-          id: 5,
+          id: 6,
           title: "Knowledge management",
           icon: Lightbulb,
           description: "Organize and manage organizational knowledge base",
           link: "https://app1.demo.zygy.com"
         },
         {
-          id: 6,
+          id: 7,
           title: "Government data crawling and policy tracking",
           icon: Building,
           description: "Crawl government data and track policy changes",
@@ -84,18 +96,7 @@ export default function ApplicationPage() {
         }
       ]
     },
-    {
-      title: "Operation",
-      applications: [
-        {
-          id: 7,
-          title: "Document processing, schedule tracking, and certificate submission",
-          icon: FileText,
-          description: "Process documents, track schedules and manage certificates",
-          link: "https://app1.demo.zygy.com"
-        }
-      ]
-    }
+
   ];
 
   // Flatten all applications for search and pagination
@@ -153,7 +154,7 @@ export default function ApplicationPage() {
             size="sm"
             onClick={() => window.location.href = app.link}
           >
-            ASK ME
+            Access This Demo
           </Button>
         </CardContent>
       </Card>
@@ -170,7 +171,7 @@ export default function ApplicationPage() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="relative">
-                  <img src="zygy-logo-dark.png" alt="Logo" width="125" height="40"></img>
+                  <img src="zygy-logo-light.png" alt="Logo" width="125" height="40"></img>
                   {/* <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
                     <Atom className="w-4 h-4 text-white" />
                   </div>
@@ -188,7 +189,7 @@ export default function ApplicationPage() {
             </div>
 
             {/* Right side icons */}
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <Button variant="ghost" size="sm" className="text-slate-200 hover:text-slate-900">
                 <Mail className="w-4 h-4" />
               </Button>
@@ -210,7 +211,7 @@ export default function ApplicationPage() {
                 <LogOut className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 to-red-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
               </Button>
-            </div>
+            </div> */}
           </div>
         </div>
       </header>
