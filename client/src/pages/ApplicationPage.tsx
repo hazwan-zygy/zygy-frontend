@@ -43,24 +43,24 @@ export default function ApplicationPage() {
           title: "Discover key information on Government Circular",
           icon: Building,
           description: "Identify and interpret key information from government Pekeliling with AI",
-          link: "https://app1.demo.zygy.com/web?title=Government%20Circular&serviceAccount=demo",
-          documentLink: "https://example.com/government-circular-docs" // Edit this URL
+          link: "https://app1.demo.zygy.com/web/?title=MOF&serviceAccount=mof",
+          documentLink: "https://drive.google.com/drive/folders/1h06OCMNrbLUq-Gh6DjJTRj5COSAwPzo4?usp=sharing" // Edit this URL
         },
         {
           id: 2,
           title: "Discover related hadiths with AI",
           icon: BookOpen,
           description: "Use AI to identify and retrieve related hadiths based on specific topics or keywords",
-          link: "https://app1.demo.zygy.com/web?title=Hadiths&serviceAccount=demo",
-          documentLink: "https://example.com/hadiths-docs" // Edit this URL
+          link: "https://app1.demo.zygy.com/web/?title=Hadith&serviceAccount=aqqal",
+          documentLink: "https://drive.google.com/drive/folders/1HJkUHPLJQE5tQ1EkcS-TXMvGJhDWnc31?usp=sharing" // Edit this URL
         },
         {
           id: 3,
           title: "Discover Key Information in Legal Act",
           icon: Scale,
           description: "Use AI to extract and summarize key information from legal acts",
-          link: "https://app1.demo.zygy.com/web?title=Legal%20Act&serviceAccount=demo",
-          documentLink: "https://example.com/legal-act-docs" // Edit this URL
+          link: "https://app1.demo.zygy.com/web/?title=ELMU&serviceAccount=demo_elmu",
+          documentLink: "https://drive.google.com/drive/folders/14XQhYIx9uvlBJr0Dqopcpe-_daDHLRhu?usp=sharing" // Edit this URL
         }
       ]
     },
@@ -72,23 +72,23 @@ export default function ApplicationPage() {
           title: "Contract Operations with AI",
           icon: FileText,
           description: "Use AI to analyze and diagnose contract operation issues by cross-referencing contract details (PDF format) with transaction records (Excel format)",
-          link: "https://app1.demo.zygy.com/web?title=Contract&serviceAccount=demo",
-          documentLink: "https://example.com/contract-operations-docs" // Edit this URL
+          link: "https://app1.demo.zygy.com/web/?title=Contracts&serviceAccount=demo_rta",
+          documentLink: "https://drive.google.com/drive/folders/1ro0pmYSSj6yKPOWmLpl05OYLM14tf8ja?usp=sharing" // Edit this URL
         },
         {
           id: 5,
           title: "Shipping Logistics with AI",
           icon: Truck,
           description: "Use AI to analyze and diagnose issues in shipping logistics by examining transaction data stored in the database",
-          link: "https://app1.demo.zygy.com/web?title=Shipping&serviceAccount=demo",
-          documentLink: "https://example.com/shipping-logistics-docs" // Edit this URL
+          link: "https://app1.demo.zygy.com/web/?title=Shipping&serviceAccount=demo_shipping",
+          documentLink: "https://drive.google.com/drive/folders/1Pb-0ZSCcu-M4wzkayD0mMl2cvU9wihL-?usp=sharing" // Edit this URL
         },
         {
           id: 6,
           title: "Geospatial (Map) Intelligence with AI",
           icon: MapPin,
           description: "Use AI to analyze and diagnose issues by integrating geospatial data with database records",
-          link: "https://app1.demo.zygy.com/web?title=Geospatial&serviceAccount=demo",
+          link: "https://app3.demo.zygy.com",
           documentLink: "https://example.com/geospatial-docs" // Edit this URL
         },
         {
@@ -96,8 +96,8 @@ export default function ApplicationPage() {
           title: "Workshop Operations with AI",
           icon: Wrench,
           description: "Use AI to analyze and diagnose issues in workshop operation by examining transaction data stored in the database",
-          link: "https://app1.demo.zygy.com/web?title=Workshop&serviceAccount=demo",
-          documentLink: "https://example.com/workshop-operations-docs" // Edit this URL
+          link: "https://app1.demo.zygy.com/web/?title=Workshop&serviceAccount=kardex",
+          documentLink: "https://drive.google.com/drive/folders/1JyUG2KplLEz5dUt0sArMcX2A8k02_iDm?usp=sharing" // Edit this URL
         }
       ]
     },
@@ -109,8 +109,9 @@ export default function ApplicationPage() {
           title: "ESG Assessment with AI",
           icon: Leaf,
           description: "Use AI to perform ESG assessments based on company sustainability reports and automatically populate the ESG sections of loan application forms",
-          link: "https://app3.demo.zygy.com/web?title=ESG&serviceAccount=demo",
-          documentLink: "https://example.com/esg-assessment-docs" // Edit this URL
+          link: "https://knowledge.zygy.com/esg-demo/",
+          documentLink: "https://example.com/esg-assessment-docs", // Edit this URL
+          hideStudyNote: true // Set to true to hide "Please study..." note
         },
         {
           id: 9,
@@ -118,7 +119,8 @@ export default function ApplicationPage() {
           icon: DollarSign,
           description: "Use AI to perform loan assessments in accordance with the Loan Onboarding Guidelines",
           link: "https://app3.demo.zygy.com/web?title=Loan&serviceAccount=demo",
-          documentLink: "https://example.com/loan-assessment-docs" // Edit this URL
+          documentLink: "https://example.com/loan-assessment-docs", // Edit this URL
+          hideStudyNote: true // Set to true to hide "Please study..." note
         }
       ]
     }
@@ -164,17 +166,19 @@ export default function ApplicationPage() {
             <p className="text-xs text-slate-600 mb-3">
               {app.description}
             </p>
-            <p className="text-xs text-slate-500 italic">
-              Please study{" "}
-              <a 
-                href={app.documentLink} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 underline"
-              >
-                ingested documents
-              </a>
-            </p>
+            {!app.hideStudyNote && (
+              <p className="text-xs text-slate-500 italic">
+                Please study{" "}
+                <a 
+                  href={app.documentLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  ingested documents
+                </a>
+              </p>
+            )}
           </div>
 
           {/* Button */}
@@ -191,9 +195,9 @@ export default function ApplicationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-800/10 via-gray-700/10 to-cyan-900/10">
+    <div className="min-h-screen bg-gradient-to-br from-gray-800/10 via-gray-700/10 to-blue-900/41">
       {/* Header */}
-      <header className="bg-gradient-to-br from-cyan-950 via-cyan-900 to-cyan-800 backdrop-blur-sm border-b border-slate-200/50 sticky top-0 z-50">
+      <header className="bg-gradient-to-br from-sky-950 via-sky-950 to-sky-950 backdrop-blur-sm border-b border-slate-200/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo and Navigation */}
@@ -205,9 +209,9 @@ export default function ApplicationPage() {
               </div>
               <nav className="ml-8">
                 <div className="flex items-center space-x-1">
-                  <Button variant="ghost" size="sm" className="text-white/80 hover:text-slate-900">
+                  {/* <Button variant="ghost" size="sm" className="text-white/80 hover:text-slate-900">
                     Home
-                  </Button>
+                  </Button> */}
                 </div>
               </nav>
             </div>
@@ -226,6 +230,7 @@ export default function ApplicationPage() {
             <p className="text-slate-600">
               Select from our available application demonstrations to explore different use cases
             </p>
+            <p className="text-blue-600 mt-2"><a href="https://forms.gle/r7ZVPzqCuqLbtNLE9" target="_blank">Survey Link</a></p>
           </div>
           
           {/* Search Bar */}
