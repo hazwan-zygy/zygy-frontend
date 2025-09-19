@@ -216,6 +216,15 @@ export default function ApplicationPage() {
                 </div>
               </nav>
             </div>
+            {/* Signup Button */}
+            <div>
+              <a
+                href="https://biz.zygy.com"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white/80 bg-sky-900/50 border border-slate-200/50 rounded-md hover:bg-sky-900 hover:text-white transition-colors"
+              >
+                Sign Up
+              </a>
+            </div>
           </div>
         </div>
       </header>
