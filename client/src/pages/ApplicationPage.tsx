@@ -220,6 +220,8 @@ export default function ApplicationPage() {
             <div>
               <a
                 href="https://biz.zygy.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center px-4 py-2 text-sm font-medium text-white/80 bg-sky-900/50 border border-slate-200/50 rounded-md hover:bg-sky-900 hover:text-white transition-colors"
               >
                 Sign Up
