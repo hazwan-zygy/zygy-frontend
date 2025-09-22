@@ -2,18 +2,18 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Search, 
-  Settings, 
-  Target, 
-  Scale, 
-  CheckCircle, 
-  FileText, 
-  Lightbulb, 
-  Building, 
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronsLeft, 
+import {
+  Search,
+  Settings,
+  Target,
+  Scale,
+  CheckCircle,
+  FileText,
+  Lightbulb,
+  Building,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
   ChevronsRight,
   Mail,
   Bell,
@@ -26,7 +26,8 @@ import {
   MapPin,
   Wrench,
   Leaf,
-  DollarSign
+  DollarSign,
+  Pen
 } from "lucide-react";
 
 export default function ApplicationPage() {
@@ -216,25 +217,27 @@ export default function ApplicationPage() {
                 </div>
               </nav>
             </div>
-            {/* Signup Button */}
-            <div>
-              <a
-                href="https://biz.zygy.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white/80 bg-sky-900/50 border border-slate-200/50 rounded-md hover:bg-sky-900 hover:text-white transition-colors"
-              >
-                Sign Up
-              </a>
-            </div>
           </div>
         </div>
       </header>
 
+      {/* Floating Subscribe Button */}
+      <div className="fixed right-6 sm:right-8 top-1/2 transform -translate-y-1/2 z-40">
+        <a
+          href="https://biz.zygy.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center px-5 py-4 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 transition-all duration-200 transform hover:scale-105"
+        >
+          <Pen className="w-4 h-4 mr-2" />
+          Subscribe
+        </a>
+      </div>
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header with Search */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 mb-2">
               Choose Application Demo via Case Study
@@ -244,7 +247,7 @@ export default function ApplicationPage() {
             </p>
             <p className="text-blue-600 mt-2"><a href="https://forms.gle/r7ZVPzqCuqLbtNLE9" target="_blank">Please fill in our Survey, it will help to serve you better</a></p>
           </div>
-          
+
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -255,7 +258,7 @@ export default function ApplicationPage() {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1); // Reset to first page when searching
               }}
-              className="pl-10 w-80 bg-white/70 backdrop-blur-sm border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+              className="pl-10 w-full sm:w-80 bg-white/70 backdrop-blur-sm border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
             />
           </div>
         </div>
