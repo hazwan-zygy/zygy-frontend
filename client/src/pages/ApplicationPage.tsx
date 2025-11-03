@@ -52,7 +52,7 @@ export default function ApplicationPage() {
           title: "Discover related hadiths with AI",
           icon: BookOpen,
           description: "Use AI to identify and retrieve related hadiths based on specific topics or keywords",
-          link: "https://app1.demo.zygy.com/web/?title=Hadith&serviceAccount=aqqal",
+          link: "https://biz.zygy.com/mgmt/?workspace=Hadith",
           documentLink: "https://drive.google.com/drive/folders/1HJkUHPLJQE5tQ1EkcS-TXMvGJhDWnc31?usp=sharing" // Edit this URL
         },
         {
@@ -60,7 +60,7 @@ export default function ApplicationPage() {
           title: "Discover Key Information in Legal Act",
           icon: Scale,
           description: "Use AI to extract and summarize key information from legal acts",
-          link: "https://app1.demo.zygy.com/web/?title=ELMU&serviceAccount=demo_elmu",
+          link: "https://biz.zygy.com/mgmt/?workspace=Legal%20Act",
           documentLink: "https://drive.google.com/drive/folders/14XQhYIx9uvlBJr0Dqopcpe-_daDHLRhu?usp=sharing" // Edit this URL
         }
       ]
@@ -73,7 +73,7 @@ export default function ApplicationPage() {
           title: "Contract Operations with AI",
           icon: FileText,
           description: "Use AI to analyze and diagnose contract operation issues by cross-referencing contract details (PDF format) with transaction records (Excel format)",
-          link: "https://app1.demo.zygy.com/web/?title=Contracts&serviceAccount=demo_rta",
+          link: "https://biz.zygy.com/mgmt/?workspace=Contract",
           documentLink: "https://drive.google.com/drive/folders/1ro0pmYSSj6yKPOWmLpl05OYLM14tf8ja?usp=sharing" // Edit this URL
         },
         {
@@ -81,7 +81,7 @@ export default function ApplicationPage() {
           title: "Shipping Logistics with AI",
           icon: Truck,
           description: "Use AI to analyze and diagnose issues in shipping logistics by examining transaction data stored in the database",
-          link: "https://app1.demo.zygy.com/web/?title=Shipping&serviceAccount=demo_shipping",
+          link: "https://biz.zygy.com/mgmt/?workspace=Shipping",
           documentLink: "https://drive.google.com/drive/folders/1Pb-0ZSCcu-M4wzkayD0mMl2cvU9wihL-?usp=sharing" // Edit this URL
         },
         {
@@ -98,7 +98,7 @@ export default function ApplicationPage() {
           title: "Workshop Operations with AI",
           icon: Wrench,
           description: "Use AI to analyze and diagnose issues in workshop operation by examining transaction data stored in the database",
-          link: "https://app1.demo.zygy.com/web/?title=Workshop&serviceAccount=kardex",
+          link: "https://biz.zygy.com/mgmt/?workspace=Workshop",
           documentLink: "https://drive.google.com/drive/folders/1JyUG2KplLEz5dUt0sArMcX2A8k02_iDm?usp=sharing" // Edit this URL
         }
       ]

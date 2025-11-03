@@ -40,11 +40,11 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
-      <Route path="/applications" component={withAuthGuard(ApplicationPage)} />
-      <Route path="/documents/:docId" component={withAuthGuard(DocumentRedirect)} />
-      <Route path="/documents/:docId/page/:pageNum" component={withAuthGuard(PDFViewerPage)} />
-      <Route path="/" component={withAuthGuard(ApplicationPage)} />
-      <Route path="/upload" component={withAuthGuard(PDFViewerPage)} />
+      <Route path="/applications" component={ApplicationPage} />
+      <Route path="/documents/:docId" component={DocumentRedirect} />
+      <Route path="/documents/:docId/page/:pageNum" component={PDFViewerPage} />
+      <Route path="/" component={ApplicationPage} />
+      <Route path="/upload" component={PDFViewerPage} />
       <Route component={NotFound} />
     </Switch>
   );
